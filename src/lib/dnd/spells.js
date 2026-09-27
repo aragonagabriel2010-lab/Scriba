@@ -1,4 +1,6 @@
-// B bardo · C chierico · D druido · M mago · P paladino · R ranger · S stregone · W warlock
+// B bardo · C chierico · D druido · M mago · P paladino · R ranger · S stregone · W warlock · A artefice · N magia blu
+import { ARTIFICER_SPELLS, EXTRA_SPELLS } from './extra'
+
 const RAW = [
   ['Arte druidica', 0, 'D'], ['Beffa crudele', 0, 'B'], ['Colpo accurato', 0, 'BSMW'], ['Dardo di fuoco', 0, 'SM'],
   ['Deflagrazione occulta', 0, 'W'], ['Fiamma sacra', 0, 'C'], ['Guida', 0, 'CD'], ['Illusione minore', 0, 'BSMW'],
@@ -42,4 +44,8 @@ const RAW = [
   ['Velocità', 3, 'SM'], ['Volare', 3, 'SMW'],
 ];
 
-export const SPELLS = RAW.map(([name, level, codes]) => ({ name, level, codes }));
+export const SPELLS = [...RAW, ...EXTRA_SPELLS].map(([name, level, codes]) => ({
+  name,
+  level,
+  codes: ARTIFICER_SPELLS.has(name) && !codes.includes('A') ? `${codes}A` : codes,
+}))

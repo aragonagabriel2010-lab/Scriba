@@ -2,8 +2,10 @@ import {
   collection,
   doc,
   onSnapshot,
+  query,
   runTransaction,
   updateDoc,
+  where,
 } from 'firebase/firestore'
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { app, db } from './firebase'
@@ -83,6 +85,10 @@ export function watchTable(code, token, onState) {
       if (state.table === undefined || state.characters === undefined || state.requests === undefined) return
       onState({ table: state.table, characters: state.characters, requests: state.requests })
     }
+    const session = getSession()
+    const requestsQuery = session?.role === 'master'
+      ? collection(db, 'tables', code, 'requests')
+      : query(collection(db, 'tables', code, 'requests'), where('player_uid', '==', token))
     const unsubs = [
       onSnapshot(tableRef(code), (snap) => {
         state.table = snap.exists() ? { id: snap.id, ...snap.data() } : null
@@ -97,10 +103,13 @@ export function watchTable(code, token, onState) {
         state.characters = snap.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => (a.created_date || 0) - (b.created_date || 0))
         emit()
       }, () => {}),
-      onSnapshot(collection(db, 'tables', code, 'requests'), (snap) => {
+      onSnapshot(requestsQuery, (snap) => {
         state.requests = snap.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => (a.created_date || 0) - (b.created_date || 0))
         emit()
-      }, () => {}),
+      }, () => {
+        state.requests = []
+        emit()
+      }),
     ]
     stop = () => unsubs.forEach((unsub) => unsub())
   }).catch(() => {
@@ -287,6 +296,7 @@ async function saveRequestNow(data, id) {
       const now = Date.now()
       const next = {
         ...payload,
+        player_uid: user.uid,
         id: ref.id,
         table_code: session.code,
         status: 'pending',

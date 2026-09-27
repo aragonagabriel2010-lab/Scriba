@@ -18,7 +18,7 @@ export default function ScoresStep({ def, setDef, role }) {
       )}
       {ABILITIES.map((ab) => {
         const base = def.scores[ab.key];
-        const bonus = race?.bonus[ab.key] || 0;
+        const bonus = (race?.bonus?.[ab.key] || 0) + (def.lineage?.high === ab.key ? 2 : 0) + (def.lineage?.low === ab.key && def.lineage?.low !== def.lineage?.high ? 1 : 0);
         const final = base + bonus + (def.asi?.[ab.key] || 0);
         const nextCost = rulesMode && base < max ? COST[base + 1] - COST[base] : 0;
         const canInc = !rulesMode || (base < max && spent + nextCost <= 27);

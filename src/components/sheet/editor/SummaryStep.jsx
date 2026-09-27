@@ -1,4 +1,5 @@
 import React from 'react';
+import { RACES, CLASSES, SUBCLASSES, PATHS } from '@/lib/dnd/data';
 import { autoFeatures, computeHpMax, diffDefinitions } from '@/lib/dnd/rules';
 import ChangeLines from '@/components/scriba/ChangeLines';
 import { Plus, X } from 'lucide-react';
@@ -20,7 +21,7 @@ export default function SummaryStep({ def, character, role, setDef }) {
     <div className="space-y-6">
       <div className="rounded-xl border border-border p-4 space-y-1">
         <p className="font-display text-2xl">{def.name || 'Senza nome'}</p>
-        <p className="text-sm text-muted-foreground">{def.race && def.classKey ? `${def.race} · ${def.classKey} · liv. ${def.level}` : 'Completa identità'}</p>
+        <p className="text-sm text-muted-foreground">{def.race && def.classKey ? `${RACES[def.race]?.name} · ${CLASSES[def.classKey]?.name}${def.subclass ? ` · ${(SUBCLASSES[def.classKey] || []).find((item) => item.key === def.subclass)?.name || ''}` : ''}${def.path ? ` · ${PATHS.find((item) => item.key === def.path)?.name || ''}` : ''} · liv. ${def.level}` : 'Completa identità'}</p>
         <p className="text-sm text-muted-foreground">PF massimi: <span className="text-foreground tabular-nums">{hpMax}</span></p>
       </div>
 

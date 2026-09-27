@@ -15,11 +15,11 @@ export default function TableView({ table, characters, requests, isMaster, onOpe
         <li className="py-4 flex items-center justify-between">
           <div>
             <p>{table.master_name}</p>
-            <p className="text-sm text-muted-foreground">Master · tiene il tavolo e le richieste</p>
+            <p className="text-sm text-muted-foreground">{isMaster ? 'Master · tiene il tavolo e le richieste' : 'Master'}</p>
           </div>
         </li>
         {characters.map((c) => (
-          <MemberRow key={c.id} character={c} pending={pendingIds.has(c.id)} onClick={isMaster && c.definition ? () => onOpen(c.id) : undefined} />
+          <MemberRow key={c.id} character={c} pending={isMaster && pendingIds.has(c.id)} onClick={isMaster && c.definition ? () => onOpen(c.id) : undefined} />
         ))}
       </ul>
       {!characters.length && <p className="text-sm text-muted-foreground">Nessun giocatore ancora. Il tavolo aspetta.</p>}

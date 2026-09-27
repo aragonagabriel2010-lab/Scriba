@@ -1,3 +1,5 @@
+import { EXTRA_RACES, EXTRA_CLASSES } from './extra'
+
 export const ABILITIES = [
   { key: 'for', label: 'Forza', short: 'FOR' },
   { key: 'des', label: 'Destrezza', short: 'DES' },
@@ -43,6 +45,7 @@ export const RACES = {
   halfling_piede: { name: 'Halfling piede leggero', speed: 7.5, languages: ['Halfling'], bonus: { des: 2, car: 1 }, lucky: true, traits: [...HALFLING, 'Furtività innata'] },
   halfling_robusto: { name: 'Halfling robusto', speed: 7.5, languages: ['Halfling'], bonus: { des: 2, cos: 1 }, lucky: true, traits: [...HALFLING, 'Resilienza dei robusti'] },
   umano: { name: 'Umano', speed: 9, languages: ['una a scelta'], bonus: { for: 1, des: 1, cos: 1, int: 1, sag: 1, car: 1 }, traits: ['+1 a tutte le caratteristiche'] },
+  ...EXTRA_RACES,
 };
 
 export const CLASSES = {
@@ -58,9 +61,11 @@ export const CLASSES = {
   ranger: { name: 'Ranger', hd: 10, saves: ['for', 'des'], skillCount: 3, skills: ['Addestrare animali', 'Atletica', 'Furtività', 'Indagare', 'Intuizione', 'Natura', 'Percezione', 'Sopravvivenza'], code: 'R', caster: { ability: 'sag', kind: 'known', half: true, known: [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11] }, features: { 1: ['Nemico prescelto', 'Esploratore nato'], 2: ['Stile di combattimento', 'Incantesimi'], 3: ['Archetipo ranger', 'Consapevolezza primordiale'], 5: ['Attacco extra'] } },
   stregone: { name: 'Stregone', hd: 6, saves: ['cos', 'car'], skillCount: 2, skills: ['Arcano', 'Inganno', 'Intimidire', 'Intuizione', 'Persuasione', 'Religione'], code: 'S', caster: { ability: 'car', kind: 'known', cantrips: [4, 5, 6], known: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15] }, features: { 1: ['Incantesimi', 'Origine stregonesca'], 2: ['Fonte di magia'], 3: ['Metamagia'] } },
   warlock: { name: 'Warlock', hd: 8, saves: ['sag', 'car'], skillCount: 2, skills: ['Arcano', 'Inganno', 'Intimidire', 'Indagare', 'Natura', 'Religione', 'Storia'], code: 'W', caster: { ability: 'car', kind: 'pact', cantrips: [2, 3, 4], known: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15] }, features: { 1: ['Patrono ultraterreno', 'Magia del patto'], 2: ['Suppliche occulte'], 3: ['Dono del patto'] } },
+  ...EXTRA_CLASSES,
 };
 
 export const EXPERTISE = { ladro: { 1: 2, 6: 2 }, bardo: { 3: 2, 10: 2 } };
+export { SUBCLASSES, PATHS } from './extra';
 export const ASI_LEVELS = { default: [4, 8, 12, 16, 19], guerriero: [4, 6, 8, 12, 14, 16, 19], ladro: [4, 8, 10, 12, 16, 19] };
 
 export const CONDITIONS = ['Accecato', 'Affascinato', 'Afferrato', 'Assordato', 'Avvelenato', 'Incapacitato', 'Invisibile', 'Paralizzato', 'Pietrificato', 'Privo di sensi', 'Prono', 'Spaventato', 'Stordito', 'Trattenuto'];

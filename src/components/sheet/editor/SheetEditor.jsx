@@ -38,15 +38,15 @@ export default function SheetEditor({ character, initial, role, onSubmit, onClos
   }, [def.classKey]);
 
   const setClass = (classKey) => {
-    if (!classKey) { setDef({ ...def, classKey: null }); return; }
+    if (!classKey) { setDef({ ...def, classKey: null, subclass: null }); return; }
     let r = rolls;
     if (!r[classKey] || r[classKey].length < def.level) {
       r = ensureRolls(r, classKey, def.level);
       persistRolls(r);
     }
     // filter spells to new class
-    const allowed = new Set(SPELLS.filter((s) => s.codes.includes(CLASSES[classKey].code)).map((s) => s.name));
-    const next = { ...def, classKey, spells: (def.spells || []).filter((s) => allowed.has(s)), prepared: (def.prepared || []).filter((s) => allowed.has(s)), cantrips: (def.cantrips || []).filter((s) => allowed.has(s)) };
+    const allowed = new Set(SPELLS.filter((s) => s.codes.includes(CLASSES[classKey].code) || (def.path && s.codes.includes('N'))).map((s) => s.name));
+    const next = { ...def, classKey, subclass: null, spells: (def.spells || []).filter((s) => allowed.has(s)), prepared: (def.prepared || []).filter((s) => allowed.has(s)), cantrips: (def.cantrips || []).filter((s) => allowed.has(s)) };
     setDef(recompute(next, r));
   };
 

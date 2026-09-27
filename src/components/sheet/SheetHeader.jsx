@@ -2,7 +2,7 @@ import React from 'react';
 import { Pencil, ArrowLeft, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import InlineText from '@/components/scriba/InlineText';
-import { RACES, CLASSES } from '@/lib/dnd/data';
+import { RACES, CLASSES, SUBCLASSES, PATHS } from '@/lib/dnd/data';
 
 export default function SheetHeader({ def, character, isMaster, onEdit, onAppearance, onOpen, onLevelUp }) {
   const state = character.state || {};
@@ -22,7 +22,7 @@ export default function SheetHeader({ def, character, isMaster, onEdit, onAppear
         ) : (
           <h1 className="font-display text-4xl sm:text-5xl">{def.name}</h1>
         )}
-        <p className="text-muted-foreground mt-1">{race.name} · {cls.name} · livello {def.level}</p>
+        <p className="text-muted-foreground mt-1">{race.name} · {cls.name}{def.subclass ? ` · ${(SUBCLASSES[def.classKey] || []).find((item) => item.key === def.subclass)?.name}` : ''}{def.path ? ` · ${PATHS.find((item) => item.key === def.path)?.name}` : ''} · livello {def.level}</p>
         <div className="mt-4">
           <p className="eyebrow mb-1">Aspetto</p>
           <InlineText value={state.appearance} onSave={onAppearance} multiline rows={2}

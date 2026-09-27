@@ -38,7 +38,7 @@ export default function PlayerSheetTab({ character, requests, patch }) {
               <p className="eyebrow">{character.mode === 'regole' ? 'Segui le regole' : 'Personaggio libero'}</p>
               <h1 className="font-display text-3xl mt-2">Crea la tua scheda</h1>
             </div>
-            {pending && <p className="text-sm text-amber-200/90">Il master sta esaminando la tua proposta.</p>}
+            {pending && <p className="text-sm text-amber-200/90">Il master deve ancora confermare la scheda.</p>}
             {rejected && <p className="text-sm text-rose-300/80">L'ultima proposta è stata rifiutata. Rivedi la scheda e riprova.</p>}
             <button onClick={() => setEditing(true)} className="btn-primary">Inizia</button>
             {!pending && (

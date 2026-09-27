@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { CLASSES } from '@/lib/dnd/data'
-import { rollDie, finalScores, computeHpMax, isAsiLevel, expertiseAllowed, classFeaturesAt, hpBonus, mod } from '@/lib/dnd/rules'
+import { rollDie, finalScores, computeHpMax, isAsiLevel, expertiseAllowed, classFeaturesAt, hpBonus, mod, pickedFeatures } from '@/lib/dnd/rules'
 
 export default function LevelUpPanel({ character, open, onClose, patch }) {
   const def = character.definition
@@ -29,8 +29,8 @@ export default function LevelUpPanel({ character, open, onClose, patch }) {
     const newDef = {
       ...def,
       level: newLevel,
-      features: [...new Set([...(def.features || []), ...classFeaturesAt(def.classKey, newLevel)])],
     }
+    newDef.features = [...new Set([...(def.features || []), ...classFeaturesAt(def.classKey, newLevel), ...pickedFeatures(newDef)])]
     newDef.hpMax = (def.hpMax || computeHpMax(def, character.hp_rolls)) + gain
     const current = character.state?.hp ?? def.hpMax
     const expLeft = expertiseAllowed(def.classKey, newLevel) - (def.expertise?.length || 0)

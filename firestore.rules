@@ -124,12 +124,13 @@ service cloud.firestore {
       }
 
       match /requests/{id} {
-        allow read: if signedIn();
+        allow read: if isMaster(code) || resource.data.player_uid == request.auth.uid;
         allow create: if signedIn()
-          && request.resource.data.keys().hasOnly(['id', 'table_code', 'character_id', 'player_name', 'first', 'changes', 'proposal', 'hp_rolls', 'state_patch', 'note', 'status', 'created_date', 'updated_date'])
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'character_id', 'player_name', 'player_uid', 'first', 'changes', 'proposal', 'hp_rolls', 'state_patch', 'note', 'status', 'created_date', 'updated_date'])
           && request.resource.data.id == id
           && request.resource.data.table_code == code
           && request.resource.data.status == 'pending'
+          && request.resource.data.player_uid == request.auth.uid
           && request.resource.data.character_id is string
           && get(characterPath(code, request.resource.data.character_id)).data.player_uid == request.auth.uid
           && noHpPatch(request.resource.data)
