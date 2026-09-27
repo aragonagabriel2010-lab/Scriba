@@ -42,7 +42,7 @@ export default function PlayerSheetTab({ character, requests, patch }) {
             {rejected && <p className="text-sm text-rose-300/80">L'ultima proposta è stata rifiutata. Rivedi la scheda e riprova.</p>}
             <button onClick={() => setEditing(true)} className="btn-primary">Inizia</button>
             {!pending && (
-              <button onClick={() => patch(character.id, { mode: '' })} className="block text-sm text-muted-foreground hover:text-foreground mt-2">Cambia modo</button>
+              <button onClick={() => patch(character.id, { mode: '', _intent: 'mode' })} className="block text-sm text-muted-foreground hover:text-foreground mt-2">Cambia modo</button>
             )}
           </div>
         ) : (

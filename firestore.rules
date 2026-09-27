@@ -1,6 +1,167 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function tablePath(code) {
+      return /databases/$(database)/documents/tables/$(code);
+    }
+
+    function characterPath(code, id) {
+      return /databases/$(database)/documents/tables/$(code)/characters/$(id);
+    }
+
+    function isMaster(code) {
+      return signedIn() && get(tablePath(code)).data.master_uid == request.auth.uid;
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function noHpPatch(data) {
+      return !('state_patch' in data) || data.state_patch == null || !('hp' in data.state_patch);
+    }
+
+    function levelStays(code, data) {
+      let character = get(characterPath(code, data.character_id)).data;
+      return !(character.closed == true
+        && character.definition != null
+        && data.proposal != null
+        && data.proposal.level != character.definition.level);
+    }
+
+    match /tables/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['id', 'code', 'master_name', 'master_uid', 'notes', 'player_count', 'last_join_id', 'created_date'])
+        && request.resource.data.code == code
+        && request.resource.data.id == code
+        && request.resource.data.master_uid == request.auth.uid
+        && request.resource.data.master_name is string
+        && request.resource.data.master_name.size() > 0
+        && request.resource.data.master_name.size() <= 40
+        && request.resource.data.notes == ''
+        && request.resource.data.player_count == 0
+        && request.resource.data.last_join_id == ''
+        && request.resource.data.created_date is int;
+
+      allow update: if signedIn() && (
+        (isMaster(code)
+          && request.resource.data.code == resource.data.code
+          && request.resource.data.id == resource.data.id
+          && request.resource.data.master_uid == resource.data.master_uid
+          && request.resource.data.master_name == resource.data.master_name
+          && request.resource.data.player_count == resource.data.player_count
+          && request.resource.data.last_join_id == resource.data.last_join_id
+          && request.resource.data.created_date == resource.data.created_date)
+        || (changedOnly(['master_uid']) && request.resource.data.master_uid == request.auth.uid)
+        || (changedOnly(['player_count', 'last_join_id'])
+          && request.resource.data.player_count == resource.data.player_count + 1
+          && request.resource.data.player_count <= 7
+          && getAfter(characterPath(code, request.resource.data.last_join_id)).data.player_uid == request.auth.uid
+          && getAfter(characterPath(code, request.resource.data.last_join_id)).data.table_code == code)
+      );
+
+      match /characters/{id} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'player_name', 'name_key', 'player_uid', 'mode', 'closed', 'state', 'hp_rolls', 'definition', 'levelup', 'choice', 'created_date'])
+          && request.resource.data.id == id
+          && request.resource.data.table_code == code
+          && request.resource.data.player_uid == request.auth.uid
+          && request.resource.data.player_name is string
+          && request.resource.data.player_name.size() > 0
+          && request.resource.data.player_name.size() <= 40
+          && request.resource.data.name_key is string
+          && request.resource.data.name_key.size() > 0
+          && request.resource.data.name_key.size() <= 40
+          && request.resource.data.mode == ''
+          && request.resource.data.closed == false
+          && request.resource.data.definition == null
+          && request.resource.data.levelup == null
+          && request.resource.data.choice == null
+          && request.resource.data.state.hp == null
+          && request.resource.data.state.hitDiceSpent == 0
+          && request.resource.data.hp_rolls.keys().size() == 0
+          && exists(tablePath(code))
+          && getAfter(tablePath(code)).data.player_count == get(tablePath(code)).data.player_count + 1
+          && getAfter(tablePath(code)).data.last_join_id == id
+          && getAfter(tablePath(code)).data.player_count <= 7;
+
+        allow update: if signedIn() && (
+          (isMaster(code)
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.table_code == resource.data.table_code
+            && request.resource.data.player_uid == resource.data.player_uid
+            && request.resource.data.player_name == resource.data.player_name
+            && request.resource.data.name_key == resource.data.name_key
+            && request.resource.data.created_date == resource.data.created_date)
+          || (changedOnly(['player_uid']) && request.resource.data.player_uid == request.auth.uid)
+          || (request.auth.uid == resource.data.player_uid
+            && resource.data.definition == null
+            && changedOnly(['mode'])
+            && request.resource.data.mode in ['', 'regole', 'libera'])
+          || (request.auth.uid == resource.data.player_uid
+            && resource.data.definition != null
+            && changedOnly(['state'])
+            && request.resource.data.state.diff(resource.data.state).affectedKeys().hasOnly(['hp', 'hitDiceSpent'])
+            && request.resource.data.state.hitDiceSpent == resource.data.state.hitDiceSpent + 1
+            && request.resource.data.state.hp is number
+            && request.resource.data.state.hp >= (resource.data.state.hp == null ? resource.data.definition.hpMax : resource.data.state.hp)
+            && request.resource.data.state.hp <= resource.data.definition.hpMax)
+          || (request.auth.uid == resource.data.player_uid
+            && resource.data.choice != null
+            && resource.data.definition != null
+            && resource.data.choice.level == resource.data.definition.level
+            && changedOnly(['definition', 'choice'])
+            && request.resource.data.choice == null
+            && request.resource.data.definition.level == resource.data.definition.level)
+        );
+      }
+
+      match /requests/{id} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'character_id', 'player_name', 'first', 'changes', 'proposal', 'hp_rolls', 'state_patch', 'note', 'status', 'created_date', 'updated_date'])
+          && request.resource.data.id == id
+          && request.resource.data.table_code == code
+          && request.resource.data.status == 'pending'
+          && request.resource.data.character_id is string
+          && get(characterPath(code, request.resource.data.character_id)).data.player_uid == request.auth.uid
+          && noHpPatch(request.resource.data)
+          && levelStays(code, request.resource.data);
+
+        allow update: if signedIn() && (
+          (resource.data.status == 'pending'
+            && request.resource.data.status == 'pending'
+            && request.resource.data.character_id == resource.data.character_id
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.table_code == resource.data.table_code
+            && request.resource.data.created_date == resource.data.created_date
+            && get(characterPath(code, resource.data.character_id)).data.player_uid == request.auth.uid
+            && noHpPatch(request.resource.data)
+            && levelStays(code, request.resource.data))
+          || (isMaster(code)
+            && resource.data.status == 'pending'
+            && request.resource.data.status in ['accepted', 'rejected']
+            && request.resource.data.character_id == resource.data.character_id
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.table_code == resource.data.table_code
+            && request.resource.data.created_date == resource.data.created_date
+            && request.resource.data.proposal == resource.data.proposal
+            && request.resource.data.state_patch == resource.data.state_patch
+            && request.resource.data.changes == resource.data.changes
+            && request.resource.data.hp_rolls == resource.data.hp_rolls
+            && request.resource.data.first == resource.data.first
+            && request.resource.data.player_name == resource.data.player_name)
+        );
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

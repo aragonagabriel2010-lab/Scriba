@@ -37,9 +37,9 @@ export default function Table() {
     if (table === undefined) return;
     if (table === null) { clearSession(); navigate('/', { replace: true }); return; }
     if (session.role === 'master') {
-      if (table.master_token !== session.token) { clearSession(); navigate('/', { replace: true }); }
+      if (table.master_uid !== session.token) { clearSession(); navigate('/', { replace: true }); }
     } else {
-      const ch = characters.find((c) => c.id === session.characterId && c.token === session.token);
+      const ch = characters.find((c) => c.id === session.characterId && c.player_uid === session.token);
       if (characters.length && !ch) { clearSession(); navigate('/', { replace: true }); }
     }
   }, [table, characters]);
