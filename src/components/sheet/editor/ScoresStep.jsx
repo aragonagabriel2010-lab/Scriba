@@ -1,24 +1,22 @@
 import React from 'react';
 import { ABILITIES, RACES } from '@/lib/dnd/data';
-import { mod, signed, COST, pointBuySpent } from '@/lib/dnd/rules';
+import { mod, signed, scoreCost, pointBuySpent, scoreBudget } from '@/lib/dnd/rules';
 import Stepper from '@/components/scriba/Stepper';
 
-const BUDGET = 27;
-
 export default function ScoresStep({ def, setDef, role }) {
-  // Master può forzare qualsiasi valore; regole e personaggio libero usano l’acquisto a punti.
-  const budgetMode = role !== 'master';
+  const budget = scoreBudget(def, role);
+  const budgetMode = budget != null;
   const min = budgetMode ? 8 : 3;
-  const max = budgetMode ? 15 : 20;
+  const max = budgetMode ? (role === 'libera' ? 20 : 15) : 20;
   const race = RACES[def.race];
   const spent = pointBuySpent(def.scores);
-  const remaining = budgetMode ? Math.max(0, BUDGET - spent) : null;
+  const remaining = budgetMode ? Math.max(0, budget.total - spent) : null;
 
   const set = (k, v) => {
     let next = Math.max(min, Math.min(max, v));
     if (budgetMode) {
       const trial = { ...def.scores, [k]: next };
-      while (next > (def.scores[k] ?? min) && pointBuySpent(trial) > BUDGET) {
+      while (next > (def.scores[k] ?? min) && pointBuySpent(trial) > budget.total) {
         next -= 1;
         trial[k] = next;
       }
@@ -30,20 +28,27 @@ export default function ScoresStep({ def, setDef, role }) {
     <div className="space-y-5">
       {budgetMode && (
         <div className={`rounded-xl border p-4 ${remaining === 0 ? 'border-primary/40 bg-primary/5' : remaining <= 3 ? 'border-amber-500/30 bg-amber-500/5' : 'border-border bg-muted/30'}`}>
-          <p className="eyebrow">Acquisto a punti</p>
-          <p className="mt-2 font-display text-3xl tabular-nums">
-            {remaining} <span className="text-lg text-muted-foreground">/ {BUDGET}</span>
+          <p className="eyebrow">Punti rimanenti</p>
+          <p className="mt-2 font-display text-4xl tabular-nums text-primary">
+            {remaining}
+            <span className="ml-2 text-lg text-muted-foreground">/ {budget.total}</span>
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Punti rimasti. Ogni punteggio base va da 8 a 15; non puoi scendere sotto zero.
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            {budget.fromLevel > 0
+              ? `${budget.creation} di creazione + ${budget.fromLevel} dal livello ${def.level}.`
+              : `${budget.creation} punti di creazione. Ogni punteggio base va da 8 a ${max}.`}
+            {' '}Non puoi andare sotto zero.
           </p>
+          {spent > budget.total && (
+            <p className="mt-2 text-sm text-destructive">Hai speso troppo: abbassa qualche punteggio.</p>
+          )}
         </div>
       )}
       {ABILITIES.map((ab) => {
         const base = def.scores[ab.key];
         const bonus = (race?.bonus?.[ab.key] || 0) + (def.lineage?.high === ab.key ? 2 : 0) + (def.lineage?.low === ab.key && def.lineage?.low !== def.lineage?.high ? 1 : 0);
         const final = base + bonus + (def.asi?.[ab.key] || 0);
-        const nextCost = budgetMode && base < max && COST[base + 1] != null ? COST[base + 1] - (COST[base] || 0) : 0;
+        const nextCost = budgetMode && base < max ? scoreCost(base + 1) - scoreCost(base) : 0;
         const canInc = !budgetMode || (base < max && nextCost <= remaining);
         return (
           <div key={ab.key} className="flex items-center gap-4 py-2 border-b border-border/50">

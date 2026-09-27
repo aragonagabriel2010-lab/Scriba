@@ -154,7 +154,28 @@ export function classResources(def) {
 }
 
 export const COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
-export const pointBuySpent = (scores) => ABILITY_KEYS.reduce((s, k) => s + (COST[scores[k]] ?? 99), 0);
+
+export function scoreCost(score) {
+  const n = Number(score) || 8;
+  if (n <= 15) return COST[n] ?? 99;
+  return (COST[15] || 9) + (n - 15);
+}
+
+export function pointBuySpent(scores = {}) {
+  return ABILITY_KEYS.reduce((sum, key) => sum + scoreCost(scores[key] ?? 8), 0);
+}
+
+export function asiPointsAt(classKey, level) {
+  return (ASI_LEVELS[classKey] || ASI_LEVELS.default).filter((item) => item <= (level || 1)).length * 2;
+}
+
+/** Punti disponibili per i punteggi: 27 di creazione, più +2 per ogni aumento previsto dal livello (personaggio libero). */
+export function scoreBudget(def, role) {
+  if (role === 'master') return null;
+  const creation = 27;
+  const fromLevel = role === 'libera' ? asiPointsAt(def.classKey, def.level) : 0;
+  return { creation, fromLevel, total: creation + fromLevel };
+}
 
 export function basicErrors(def) {
   const e = [];
