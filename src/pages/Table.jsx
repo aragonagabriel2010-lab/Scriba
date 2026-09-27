@@ -20,7 +20,6 @@ const MASTER_TABS = [
 const PLAYER_TABS = [
   { key: 'scheda', label: 'Scheda' },
   { key: 'tavolo', label: 'Tavolo' },
-  { key: 'richieste', label: 'Richieste' },
   { key: 'dadi', label: 'Dadi' },
   { key: 'manuale', label: 'Manuale' },
 ];
@@ -73,8 +72,8 @@ export default function Table() {
               <MasterSheet character={viewing} pending={viewingPending} patch={patchCharacter} onBack={() => setViewId(null)} />
             ) : tab === 'tavolo' ? (
               <TableView table={table} characters={characters} requests={requests} isMaster={isMaster} onOpen={(id) => setViewId(id)} onSaveNotes={(text) => patchTable(table.id, { notes: text })} />
-            ) : tab === 'richieste' ? (
-              <RequestsView requests={requests} characters={characters} patch={patchCharacter} isMaster={isMaster} characterId={session.characterId} />
+            ) : tab === 'richieste' && isMaster ? (
+              <RequestsView requests={requests} characters={characters} patch={patchCharacter} />
             ) : tab === 'dadi' ? (
               <DiceView character={myCharacter} />
             ) : tab === 'manuale' ? (

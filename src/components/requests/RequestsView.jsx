@@ -2,12 +2,11 @@ import React from 'react';
 import RequestCard from './RequestCard';
 import ChangeLines from '@/components/scriba/ChangeLines';
 
-export default function RequestsView({ requests, characters, patch, isMaster, characterId }) {
-  const mine = requests.filter((r) => r.character_id === characterId);
-  const list = isMaster ? requests.filter((r) => r.status === 'pending') : mine;
-  const sorted = [...list].sort((a, b) => (b.updated_date || '').localeCompare(a.updated_date || ''));
+export default function RequestsView({ requests, characters, patch }) {
+  const list = requests.filter((r) => r.status === 'pending');
+  const sorted = [...list].sort((a, b) => (b.updated_date || 0) - (a.updated_date || 0));
   const char = (id) => characters.find((c) => c.id === id);
-  const resolved = (isMaster ? requests : mine).filter((r) => r.status !== 'pending').slice(0, 10);
+  const resolved = requests.filter((r) => r.status !== 'pending').slice(0, 10);
 
   return (
     <div className="space-y-8">
@@ -16,7 +15,7 @@ export default function RequestsView({ requests, characters, patch, isMaster, ch
           {sorted.map((r) => <RequestCard key={r.id} req={r} character={char(r.character_id)} patch={patch} />)}
         </ul>
       ) : (
-        <p className="text-sm text-muted-foreground">{isMaster ? 'Nessuna richiesta in attesa.' : 'Non hai richieste in attesa.'}</p>
+        <p className="text-sm text-muted-foreground">Nessuna richiesta in attesa.</p>
       )}
       {resolved.length > 0 && (
         <div>
@@ -34,9 +33,6 @@ export default function RequestsView({ requests, characters, patch, isMaster, ch
             ))}
           </ul>
         </div>
-      )}
-      {!isMaster && (
-        <p className="text-xs text-muted-foreground/60">Nella scheda a regole le modifiche si applicano subito. Nel personaggio libero, ogni cambio di definizione passa di qui.</p>
       )}
     </div>
   );

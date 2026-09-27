@@ -1,4 +1,4 @@
-import { ABILITIES, ABILITY_KEYS, RACES, CLASSES, SKILLS, EXPERTISE, ASI_LEVELS } from './data';
+import { ABILITIES, ABILITY_KEYS, RACES, CLASSES, SKILLS, EXPERTISE, ASI_LEVELS, SUBCLASSES, PATHS } from './data';
 import { SPELLS } from './spells';
 
 export const mod = (s) => Math.floor((s - 10) / 2);
@@ -8,7 +8,7 @@ export const rollDie = (n) => 1 + Math.floor(Math.random() * n);
 export const formatMeters = (m) => `${String(m).replace('.', ',')} m`;
 
 export const blankDefinition = (mode, name) => ({
-  name: name || '', race: null, classKey: null, level: 1,
+  name: name || '', race: null, classKey: null, subclass: null, path: null, lineage: { high: null, low: null }, level: 1,
   scores: Object.fromEntries(ABILITY_KEYS.map((k) => [k, mode === 'regole' ? 8 : 10])),
   asi: {}, skills: [], expertise: [], cantrips: [], spells: [], prepared: [], extraSpells: [], features: [], hpMax: 0,
 });
@@ -21,7 +21,12 @@ export const defaultState = () => ({
 
 export function finalScores(def) {
   const race = RACES[def.race];
-  return Object.fromEntries(ABILITY_KEYS.map((k) => [k, (def.scores?.[k] ?? 10) + (race?.bonus[k] || 0) + (def.asi?.[k] || 0)]));
+  const flex = {};
+  if (race?.bonusMode === 'flex' && def.lineage?.high && def.lineage.low && def.lineage.high !== def.lineage.low) {
+    flex[def.lineage.high] = 2;
+    flex[def.lineage.low] = 1;
+  }
+  return Object.fromEntries(ABILITY_KEYS.map((k) => [k, (def.scores?.[k] ?? 10) + (race?.bonus?.[k] || 0) + (flex[k] || 0) + (def.asi?.[k] || 0)]));
 }
 
 export function hpBonus(def) {
@@ -74,16 +79,16 @@ export function spellInfo(def) {
   return info;
 }
 
-export function classSpells(classKey, maxLevel) {
+export function classSpells(classKey, maxLevel, def) {
   const code = CLASSES[classKey]?.code;
   if (!code) return [];
-  return SPELLS.filter((s) => s.level >= 1 && s.level <= maxLevel && s.codes.includes(code));
+  return SPELLS.filter((s) => s.level >= 1 && s.level <= maxLevel && (s.codes.includes(code) || (def?.path && s.codes.includes('N'))));
 }
 
 export function cantripOptions(def) {
   const cls = CLASSES[def.classKey];
   const own = cls?.caster?.cantrips ? cls.code : null;
-  return SPELLS.filter((s) => s.level === 0 && ((own && s.codes.includes(own)) || (def.race === 'elfo_alto' && s.codes.includes('M'))));
+  return SPELLS.filter((s) => s.level === 0 && ((own && s.codes.includes(own)) || (def.race === 'elfo_alto' && s.codes.includes('M')) || (def.path && s.codes.includes('N'))));
 }
 
 export const raceSkills = (def) => RACES[def.race]?.skills || [];
@@ -107,9 +112,19 @@ export function classFeaturesAt(classKey, level) {
   return CLASSES[classKey]?.features?.[level] || [];
 }
 
+export function pickedFeatures(def) {
+  const out = [];
+  const sub = (SUBCLASSES[def.classKey] || []).find((item) => item.key === def.subclass);
+  if (sub && def.level >= sub.level) out.push(sub.name);
+  const path = PATHS.find((item) => item.key === def.path);
+  if (path) out.push(path.name);
+  return out;
+}
+
 export function autoFeatures(def) {
   const out = [...(RACES[def.race]?.traits || [])];
   for (let l = 1; l <= def.level; l++) out.push(...classFeaturesAt(def.classKey, l));
+  out.push(...pickedFeatures(def));
   return [...new Set(out)];
 }
 
@@ -146,6 +161,12 @@ export function basicErrors(def) {
   if (!def.name?.trim()) e.push('Dai un nome al personaggio.');
   if (!RACES[def.race]) e.push('Scegli una razza.');
   if (!CLASSES[def.classKey]) e.push('Scegli una classe.');
+  if (RACES[def.race]?.bonusMode === 'flex') {
+    if (!def.lineage?.high || !def.lineage?.low) e.push('Assegna +2 e +1 a due caratteristiche diverse.');
+    else if (def.lineage.high === def.lineage.low) e.push('Il +2 e il +1 vanno su caratteristiche diverse.');
+  }
+  if (def.subclass && !(SUBCLASSES[def.classKey] || []).some((item) => item.key === def.subclass)) e.push('Questa sottoclasse non appartiene alla classe.');
+  if (def.path && !PATHS.some((item) => item.key === def.path)) e.push('Percorso sconosciuto.');
   return e;
 }
 
@@ -168,7 +189,7 @@ export function validateRules(def, character) {
   const cOpts = new Set(cantripOptions(def).map((s) => s.name));
   if (def.cantrips.length > info.cantrips) e.push(`Puoi avere al massimo ${info.cantrips} trucchetti.`);
   if (def.cantrips.some((n) => !cOpts.has(n))) e.push('Alcuni trucchetti non sono nella tua lista.');
-  const sOpts = new Set(classSpells(def.classKey, info.maxLevel).map((s) => s.name));
+  const sOpts = new Set(classSpells(def.classKey, info.maxLevel, def).map((s) => s.name));
   if (def.spells.some((n) => !sOpts.has(n))) e.push('Alcuni incantesimi non sono nella lista o superano il livello che puoi lanciare.');
   const limit = info.kind === 'book' ? info.book : info.kind === 'prepared' ? info.prepared : info.known;
   if (def.spells.length > limit) e.push(`Puoi avere al massimo ${limit} incantesimi.`);
@@ -199,9 +220,11 @@ export function diffDefinitions(a, b) {
   ABILITIES.forEach((ab) => val(ab.label, fa[ab.key] != null ? String(fa[ab.key]) : undefined, String(fb[ab.key])));
   [['Competenze', 'skills'], ['Maestria', 'expertise'], ['Trucchetti', 'cantrips'], ['Incantesimi', 'spells'], ['Pronti oggi', 'prepared'], ['Privilegi', 'features']]
     .forEach(([l, k]) => { const d = listDiff(l, a[k], b[k]); if (d) out.push(d); });
-  const ex = (s) => (s || []).map((x) => `${x.name} (${x.level ? `${x.level}°` : 'trucchetto'})`);
+  const ex = (s) => (s || []).map((x) => `${x.name} (${x.level ? `${x.level}°` : 'trucchetto'})${x.effect ? `: ${x.effect}` : ''}`);
   const d = listDiff('Fuori lista', ex(a.extraSpells), ex(b.extraSpells));
   if (d) out.push(d);
+  val('Sottoclasse', a.subclass || undefined, b.subclass || undefined);
+  val('Percorso', a.path || undefined, b.path || undefined);
   val('PF massimi', a.hpMax != null ? String(a.hpMax) : undefined, String(b.hpMax));
   return out;
 }

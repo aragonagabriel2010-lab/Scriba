@@ -3,7 +3,7 @@ import Section from '@/components/scriba/Section';
 import { ABILITIES, SKILLS, RACES, CLASSES } from '@/lib/dnd/data';
 import { finalScores, profBonus, mod, signed, proficientSkills, skillBonus, defaultAC, formatMeters } from '@/lib/dnd/rules';
 
-export default function AbilitiesBlock({ def, state }) {
+export default function AbilitiesBlock({ def, state, choice, onOpenChoice }) {
   const scores = finalScores(def);
   const pb = profBonus(def.level);
   const cls = def.classKey;
@@ -14,7 +14,19 @@ export default function AbilitiesBlock({ def, state }) {
   const passive = 10 + skillBonus(def, 'Percezione');
 
   return (
-    <Section title="Caratteristiche">
+    <Section
+      title="Caratteristiche"
+      action={choice ? (
+        <button type="button" onClick={onOpenChoice} className="btn-primary h-8 px-3 text-xs">
+          Usa i punti
+        </button>
+      ) : null}
+    >
+      {choice && (
+        <p className="mb-4 text-sm text-amber-200/90">
+          Hai punti da mettere: {choice.asi ? 'aumento di caratteristica' : ''}{choice.asi && choice.expertise ? ' e ' : ''}{choice.expertise ? 'maestria' : ''}.
+        </p>
+      )}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {ABILITIES.map((ab) => {
           const sv = clsSaves.includes(ab.key);

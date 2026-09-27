@@ -6,11 +6,11 @@ export const MANUAL_BOOKS = [
   },
   {
     title: 'Nymphology · Magia blu',
-    note: 'Encyclopaedia Arcane, Mongoose. È un supplemento d20 della 3ª edizione, non entra nella creazione 5e.',
+    note: 'Encyclopaedia Arcane, Mongoose. Percorsi e magie entrano nella scheda come opzioni riassunte; i testi del libro restano dell’editore.',
     sections: [
       {
         title: 'Cos’è',
-        body: `È un manuale umoristico sulla «magia blu»: l’uso erotico della magia arcana. Non fa parte dell’SRD e non cambia le classi della scheda. Si consulta a parte, se il tavolo vuole usarlo.`,
+        body: `È un supplemento umoristico d20 sulla «magia blu». Nella scheda puoi scegliere un percorso (Mago dell’agonia, Ruffiano mistico, Seduttore, Scrutatore) e le magie blu riassunte nella lista. Solo tra adulti consenzienti; niente minori.`,
       },
       {
         title: 'Classi di prestigio',
@@ -19,17 +19,17 @@ Ruffiano mistico — procura, con l’evocazione, il compagno che un cliente chi
 Seduttore — fascino e magia per conquistare chi è in grado di rispondere.
 Scrutatore — divinazione per osservare a distanza persone adulte.
 
-Sono percorsi da personaggi già incantatori, non classi di 1° livello della 5ª edizione.`,
+Nella creazione scheda sono percorsi opzionali, non classi di 1° livello.`,
       },
       {
         title: 'Magie che aggiunge',
-        body: `Aggiunge incantesimi nuovi e riletture di incantesimi comuni, tutti sul tema della magia blu: protezioni, ammaliamenti, divinazioni e evocazioni di compagni. I testi restano nel volume dell’editore: qui non sono copiati, e non entrano nella lista incantesimi della scheda.`,
+        body: `Nella lista compaiono i nomi italiani riassunti (Velo di riservatezza, Patto tra adulti, Sguardo lontano, Compagno evocato, e altri). I testi lunghi restano nel volume: qui non sono copiati.`,
       },
     ],
   },
   {
     title: 'Guida del giocatore di Xanathar',
-    note: 'Riassunto originale. I testi del libro restano della Wizards of the Coast.',
+    note: 'Riassunto originale. Sottoclassi e magie elencate entrano nella creazione della scheda. I testi del libro restano della Wizards of the Coast.',
     sections: [
       {
         title: 'Regole opzionali',
@@ -56,7 +56,7 @@ Warlock — Celestiale, Lama maledetta.`,
   },
   {
     title: 'Calderone tuttofare di Tasha',
-    note: 'Riassunto originale. I testi del libro restano della Wizards of the Coast.',
+    note: 'Riassunto originale. Sottoclassi e magie elencate entrano nella creazione della scheda. I testi del libro restano della Wizards of the Coast.',
     sections: [
       {
         title: 'Personalizzare',
@@ -89,7 +89,7 @@ Patron del gruppo, puzzle magici e regole per il viaggio sono strumenti del mast
   },
   {
     title: 'Mostri del multiverso',
-    note: 'Riassunto originale. Schede e tratti restano della Wizards of the Coast.',
+    note: 'Riassunto originale. Le razze elencate entrano nella creazione della scheda. Schede e tratti restano della Wizards of the Coast.',
     sections: [
       {
         title: 'Cosa contiene',
@@ -97,9 +97,9 @@ Patron del gruppo, puzzle magici e regole per il viaggio sono strumenti del mast
       },
       {
         title: 'Razze giocanti',
-        body: `Aasimar, bugbear, centauro, changeling, coboldo, duergar, eladrin, fatato, firbolg, gith, gnomo delle profondità, goblin, goliath, harengon, hobgoblin, kenku, lucertoloide, minotauro, orco, owlin, satiro, sea elf, shadar-kai, shifter, tabaxi, tortle, tritone, yuan-ti.
+        body: `Aasimar, bugbear, centauro, changeling, coboldo, duergar, eladrin, fatato, firbolg, githyanki, githzerai, gnomo delle profondità, goblin, goliath, harengon, hobgoblin, kenku, leonin, lucertoloide, minotauro, orco, owlin, satiro, elfo del mare, shadar-kai, shifter, tabaxi, tortle, tritone, yuan-ti.
 
-Nella creazione di Scriba restano le razze del manuale base. Queste si usano se il master le ammette, copiando i tratti dal libro.`,
+Nella scheda le trovi sotto Mostri del multiverso: i bonus di caratteristica li assegni tu (+2 e +1).`,
       },
     ],
   },

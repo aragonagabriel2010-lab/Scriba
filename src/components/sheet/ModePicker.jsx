@@ -5,7 +5,7 @@ import { Shield, Sparkles } from 'lucide-react';
 export default function ModePicker({ onPick }) {
   const modes = [
     { key: 'regole', icon: Shield, title: 'Segui le regole', desc: 'Razza, classe, punteggi e magie restano nei limiti del manuale. La scheda si applica subito.' },
-    { key: 'libera', icon: Sparkles, title: 'Personaggio libero', desc: 'Razza e classe dal manuale, il resto si compone. Le modifiche arrivano al master come richieste.' },
+    { key: 'libera', icon: Sparkles, title: 'Personaggio libero', desc: 'Razza e classe dal manuale, il resto si compone. Puoi anche inventare magie. Le modifiche arrivano al master.' },
   ];
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">

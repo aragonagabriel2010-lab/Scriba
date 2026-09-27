@@ -3,7 +3,7 @@ import { ABILITIES, SKILLS, CLASSES } from '@/lib/dnd/data'
 import { finalScores } from '@/lib/dnd/rules'
 import { applyChoice } from '@/lib/actions'
 
-export default function ChoicePanel({ character }) {
+export default function ChoicePanel({ character, onDone }) {
   const def = character.definition
   const choice = character.choice
   const [asi, setAsi] = useState({ mode: 'plus2', picks: [] })
@@ -30,6 +30,7 @@ export default function ChoicePanel({ character }) {
     else if (choice.asi && asi.mode === 'split') asi.picks.forEach((key) => { nextAsi[key] = (nextAsi[key] || 0) + 1 })
     try {
       await applyChoice(character, { ...def, asi: nextAsi, expertise: [...(def.expertise || []), ...exp] })
+      onDone?.()
     } catch (err) {
       setError(err.message)
     }
@@ -79,7 +80,10 @@ export default function ChoicePanel({ character }) {
         </div>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <button type="button" disabled={!ready} onClick={() => void save()} className="btn-primary">Metti i punti</button>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={!ready} onClick={() => void save()} className="btn-primary">Metti i punti</button>
+        {onDone && <button type="button" onClick={onDone} className="btn-ghost">Chiudi</button>}
+      </div>
     </div>
   )
 }
