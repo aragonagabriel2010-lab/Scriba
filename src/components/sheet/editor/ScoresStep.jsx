@@ -6,18 +6,19 @@ import Stepper from '@/components/scriba/Stepper';
 const BUDGET = 27;
 
 export default function ScoresStep({ def, setDef, role }) {
-  const rulesMode = role === 'regole';
-  const min = rulesMode ? 8 : 3;
-  const max = rulesMode ? 15 : 20;
+  // Master può forzare qualsiasi valore; regole e personaggio libero usano l’acquisto a punti.
+  const budgetMode = role !== 'master';
+  const min = budgetMode ? 8 : 3;
+  const max = budgetMode ? 15 : 20;
   const race = RACES[def.race];
   const spent = pointBuySpent(def.scores);
-  const remaining = rulesMode ? Math.max(0, BUDGET - spent) : null;
+  const remaining = budgetMode ? Math.max(0, BUDGET - spent) : null;
 
   const set = (k, v) => {
     let next = Math.max(min, Math.min(max, v));
-    if (rulesMode) {
+    if (budgetMode) {
       const trial = { ...def.scores, [k]: next };
-      while (next > def.scores[k] && pointBuySpent(trial) > BUDGET) {
+      while (next > (def.scores[k] ?? min) && pointBuySpent(trial) > BUDGET) {
         next -= 1;
         trial[k] = next;
       }
@@ -27,7 +28,7 @@ export default function ScoresStep({ def, setDef, role }) {
 
   return (
     <div className="space-y-5">
-      {rulesMode && (
+      {budgetMode && (
         <div className={`rounded-xl border p-4 ${remaining === 0 ? 'border-primary/40 bg-primary/5' : remaining <= 3 ? 'border-amber-500/30 bg-amber-500/5' : 'border-border bg-muted/30'}`}>
           <p className="eyebrow">Acquisto a punti</p>
           <p className="mt-2 font-display text-3xl tabular-nums">
@@ -42,8 +43,8 @@ export default function ScoresStep({ def, setDef, role }) {
         const base = def.scores[ab.key];
         const bonus = (race?.bonus?.[ab.key] || 0) + (def.lineage?.high === ab.key ? 2 : 0) + (def.lineage?.low === ab.key && def.lineage?.low !== def.lineage?.high ? 1 : 0);
         const final = base + bonus + (def.asi?.[ab.key] || 0);
-        const nextCost = rulesMode && base < max && COST[base + 1] != null ? COST[base + 1] - (COST[base] || 0) : 0;
-        const canInc = !rulesMode || (base < max && nextCost <= remaining);
+        const nextCost = budgetMode && base < max && COST[base + 1] != null ? COST[base + 1] - (COST[base] || 0) : 0;
+        const canInc = !budgetMode || (base < max && nextCost <= remaining);
         return (
           <div key={ab.key} className="flex items-center gap-4 py-2 border-b border-border/50">
             <div className="w-32">
@@ -51,7 +52,7 @@ export default function ScoresStep({ def, setDef, role }) {
               <p className="text-[10px] uppercase text-muted-foreground">{ab.short}</p>
             </div>
             <Stepper value={base} min={min} max={max} canInc={canInc} onChange={(v) => set(ab.key, v)} />
-            {rulesMode && base < max && (
+            {budgetMode && base < max && (
               <span className={`text-xs tabular-nums ${canInc ? 'text-muted-foreground' : 'text-destructive/80'}`}>
                 +{nextCost} pt
               </span>
@@ -64,7 +65,7 @@ export default function ScoresStep({ def, setDef, role }) {
           </div>
         );
       })}
-      {!rulesMode && <p className="text-xs text-muted-foreground/70">Nel personaggio libero scegli i punteggi a mano, entro i limiti della razza.</p>}
+      {role === 'master' && <p className="text-xs text-muted-foreground/70">Come master puoi impostare i punteggi senza limite di punti.</p>}
     </div>
   );
 }
