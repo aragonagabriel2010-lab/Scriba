@@ -10,6 +10,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+firebase-debug.log
+firebase-debug.*.log
 
 node_modules
 dist
@@ -20,6 +22,10 @@ dist-ssr
 # every build, and the deploy runs one before reading them.
 .output
 .wrangler
+
+# Firebase local cache
+.firebase/
+firebase-*.zip
 
 # Editor directories and files
 .vscode/*
@@ -32,7 +38,6 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
 .vite
 base44/.app.jsonc
 server/data/
