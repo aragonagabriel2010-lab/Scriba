@@ -1,0 +1,38 @@
+{
+  "name": "Character",
+  "type": "object",
+  "properties": {
+    "table_code": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "closed": {
+      "type": "boolean",
+      "default": false
+    },
+    "definition": {
+      "type": "object"
+    },
+    "state": {
+      "type": "object"
+    },
+    "hp_rolls": {
+      "type": "object"
+    },
+    "levelup": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "table_code",
+    "player_name"
+  ]
+}

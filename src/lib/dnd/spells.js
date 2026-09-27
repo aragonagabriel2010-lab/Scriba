@@ -1,0 +1,45 @@
+// B bardo · C chierico · D druido · M mago · P paladino · R ranger · S stregone · W warlock
+const RAW = [
+  ['Arte druidica', 0, 'D'], ['Beffa crudele', 0, 'B'], ['Colpo accurato', 0, 'BSMW'], ['Dardo di fuoco', 0, 'SM'],
+  ['Deflagrazione occulta', 0, 'W'], ['Fiamma sacra', 0, 'C'], ['Guida', 0, 'CD'], ['Illusione minore', 0, 'BSMW'],
+  ['Luce', 0, 'BCSM'], ['Luci danzanti', 0, 'BSM'], ['Mano magica', 0, 'BSMW'], ['Messaggio', 0, 'BSM'],
+  ['Prestidigitazione', 0, 'BSMW'], ['Produrre fiamma', 0, 'D'], ['Raggio di gelo', 0, 'SM'], ['Randello incantato', 0, 'D'],
+  ['Resistenza', 0, 'CD'], ['Riparare', 0, 'BCDSM'], ['Salvare i morenti', 0, 'C'], ['Spruzzo acido', 0, 'SM'],
+  ['Spruzzo velenoso', 0, 'DSMW'], ['Stretta folgorante', 0, 'SM'], ['Taumaturgia', 0, 'C'], ['Tocco gelido', 0, 'SMW'],
+
+  ['Allarme', 1, 'MR'], ['Amicizia con gli animali', 1, 'BDR'], ['Anatema', 1, 'BC'], ['Armatura magica', 1, 'SM'],
+  ['Bacca benefica', 1, 'DR'], ['Benedizione', 1, 'CP'], ['Caduta morbida', 1, 'BSM'], ['Camuffare se stesso', 1, 'BSM'],
+  ['Charme su persone', 1, 'BDSMW'], ['Comando', 1, 'CP'], ['Comprensione dei linguaggi', 1, 'BSMW'],
+  ['Creare o distruggere acqua', 1, 'CD'], ['Cura ferite', 1, 'BCDPR'], ['Dardo incantato', 1, 'SM'],
+  ['Dardo tracciante', 1, 'C'], ['Eroismo', 1, 'BP'], ['Favore divino', 1, 'P'], ['Identificare', 1, 'BM'],
+  ['Immagine silenziosa', 1, 'BSM'], ['Individuazione del bene e del male', 1, 'CP'], ['Individuazione del magico', 1, 'BCDPRSM'],
+  ['Infliggi ferite', 1, 'C'], ['Intralciare', 1, 'D'], ['Luminescenza', 1, 'BD'], ['Mani brucianti', 1, 'SM'],
+  ['Marchio del cacciatore', 1, 'R'], ['Nube di nebbia', 1, 'DRSM'], ['Onda tonante', 1, 'BDSM'],
+  ['Parlare con gli animali', 1, 'BDR'], ['Parola guaritrice', 1, 'BCD'], ['Passo veloce', 1, 'BDRM'],
+  ['Protezione dal bene e dal male', 1, 'CPMW'], ['Purificare cibo e bevande', 1, 'CDP'], ['Rimprovero infernale', 1, 'W'],
+  ['Risata incontenibile', 1, 'BM'], ['Ritirata rapida', 1, 'SMW'], ['Salto', 1, 'DRSM'], ['Santuario', 1, 'C'],
+  ['Scudo', 1, 'SM'], ['Scudo della fede', 1, 'CP'], ['Servitore inosservato', 1, 'BMW'], ['Sonno', 1, 'BSM'],
+  ['Spruzzo colorato', 1, 'SM'],
+
+  ['Aiuto', 2, 'CP'], ['Arma magica', 2, 'PM'], ['Arma spirituale', 2, 'C'], ['Blocca persone', 2, 'BCDSMW'],
+  ['Calmare emozioni', 2, 'BC'], ['Frantumare', 2, 'BSMW'], ['Freccia acida', 2, 'M'], ['Immagine speculare', 2, 'SMW'],
+  ['Individuazione dei pensieri', 2, 'BSM'], ['Invisibilità', 2, 'BSMW'], ['Levitazione', 2, 'SM'],
+  ['Localizzare oggetti', 2, 'BCDPRM'], ['Oscurità', 2, 'SMW'], ['Passare senza tracce', 2, 'DR'], ['Passo velato', 2, 'SMW'],
+  ['Pelle coriacea', 2, 'DR'], ['Preghiera di guarigione', 2, 'C'], ['Ragnatela', 2, 'SM'], ['Raggio rovente', 2, 'SM'],
+  ['Riscaldare il metallo', 2, 'BD'], ['Ristorare inferiore', 2, 'BCDPR'], ['Scurovisione', 2, 'DRSM'],
+  ['Sfera infuocata', 2, 'DM'], ['Sfocatura', 2, 'SM'], ['Silenzio', 2, 'BCR'], ['Suggestione', 2, 'BSMW'],
+  ['Vedere invisibilità', 2, 'BSM'], ['Zona di verità', 2, 'BCP'],
+
+  ['Animare morti', 3, 'CM'], ['Anti-individuazione', 3, 'BRM'], ['Camminare sull’acqua', 3, 'CDRS'],
+  ['Chiaroveggenza', 3, 'BCSM'], ['Controincantesimo', 3, 'SMW'], ['Crescita vegetale', 3, 'BDR'],
+  ['Dissolvi magie', 3, 'BCDPSMW'], ['Evoca animali', 3, 'DR'], ['Forma gassosa', 3, 'SMW'], ['Fulmine', 3, 'SM'],
+  ['Glifo di interdizione', 3, 'BCM'], ['Immagine maggiore', 3, 'BSMW'], ['Lentezza', 3, 'SM'], ['Linguaggi', 3, 'BCSMW'],
+  ['Luce diurna', 3, 'CDPRS'], ['Nube maleodorante', 3, 'BSM'], ['Palla di fuoco', 3, 'SM'],
+  ['Parola guaritrice di massa', 3, 'C'], ['Paura', 3, 'BSMW'], ['Protezione dall’energia', 3, 'CDRSM'],
+  ['Respirare sott’acqua', 3, 'DRSM'], ['Richiamare il fulmine', 3, 'D'], ['Rimuovi maledizione', 3, 'CPMW'],
+  ['Rinascita', 3, 'CP'], ['Scagliare maledizione', 3, 'BCM'], ['Spiriti guardiani', 3, 'C'],
+  ['Tempesta di nevischio', 3, 'DSM'], ['Tocco del vampiro', 3, 'MW'], ['Trama ipnotica', 3, 'BSMW'],
+  ['Velocità', 3, 'SM'], ['Volare', 3, 'SMW'],
+];
+
+export const SPELLS = RAW.map(([name, level, codes]) => ({ name, level, codes }));

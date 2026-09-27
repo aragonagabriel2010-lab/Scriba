@@ -1,0 +1,43 @@
+{
+  "name": "Request",
+  "type": "object",
+  "properties": {
+    "table_code": {
+      "type": "string"
+    },
+    "character_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "first": {
+      "type": "boolean"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "proposal": {
+      "type": "object"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "table_code",
+    "character_id"
+  ]
+}

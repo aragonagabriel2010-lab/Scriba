@@ -1,0 +1,21 @@
+{
+  "name": "Table",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "master_name": {
+      "type": "string"
+    },
+    "master_token": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "code"
+  ]
+}
