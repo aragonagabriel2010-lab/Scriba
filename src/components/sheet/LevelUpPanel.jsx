@@ -20,7 +20,9 @@ export default function LevelUpPanel({ character, open, onClose, patch }) {
 
   const roll = character.levelup?.roll ?? 0
   const gain = Math.max(1, roll + hpBonus(def))
-  const needsChoice = isAsiLevel(def.classKey, newLevel) || expertiseAllowed(def.classKey, newLevel) > (def.expertise?.length || 0)
+  const asiPoints = isAsiLevel(def.classKey, newLevel) ? 2 : 0
+  const expLeft = Math.max(0, expertiseAllowed(def.classKey, newLevel) - (def.expertise?.length || 0))
+  const needsChoice = asiPoints > 0 || expLeft > 0
 
   const confirm = () => {
     const prev = [...(character.hp_rolls?.[def.classKey] || [])]
@@ -33,12 +35,11 @@ export default function LevelUpPanel({ character, open, onClose, patch }) {
     newDef.features = [...new Set([...(def.features || []), ...classFeaturesAt(def.classKey, newLevel), ...pickedFeatures(newDef)])]
     newDef.hpMax = (def.hpMax || computeHpMax(def, character.hp_rolls)) + gain
     const current = character.state?.hp ?? def.hpMax
-    const expLeft = expertiseAllowed(def.classKey, newLevel) - (def.expertise?.length || 0)
     patch(character.id, {
       definition: newDef,
       hp_rolls: rolls,
       levelup: null,
-      choice: needsChoice ? { level: newLevel, asi: isAsiLevel(def.classKey, newLevel), expertise: Math.max(0, expLeft) } : null,
+      choice: needsChoice ? { level: newLevel, asi: asiPoints > 0, asiPoints, expertise: expLeft } : null,
       state: { ...character.state, hp: Math.min(newDef.hpMax, current + gain) },
     })
     onClose()
@@ -55,7 +56,11 @@ export default function LevelUpPanel({ character, open, onClose, patch }) {
             <p className="text-sm text-muted-foreground mt-1">+{mod(finalScores(def).cos)} COS{def.race === 'nano_colline' ? ' +1 nano' : ''}{def.classKey === 'stregone' ? ' +1 stregone' : ''} → <span className="text-foreground">+{gain} PF</span></p>
             <p className="text-xs text-muted-foreground/60 mt-1">Il tiro resta, non si ritira.</p>
           </div>
-          {needsChoice && <p className="text-sm text-muted-foreground">I punti nuovi li sceglie il giocatore, appena confermi.</p>}
+          {needsChoice && (
+            <p className="text-sm text-muted-foreground">
+              A questo livello il giocatore riceve {asiPoints ? `${asiPoints} punti caratteristica` : ''}{asiPoints && expLeft ? ' e ' : ''}{expLeft > 0 ? 'maestria' : ''}. Li metterà lui sulla scheda.
+            </p>
+          )}
           <button onClick={confirm} disabled={!roll} className="btn-primary w-full">Conferma il livello {newLevel}</button>
         </div>
       </DialogContent>

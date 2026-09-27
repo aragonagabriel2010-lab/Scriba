@@ -11,6 +11,7 @@ import NotesBlock from './NotesBlock';
 import SheetEditor from './editor/SheetEditor';
 import { submitProposal, submitStateChange, spendHitDie } from '@/lib/actions';
 import ChoicePanel from './ChoicePanel';
+import { pendingChoice, unspentAsiPoints, unspentExpertiseSlots } from '@/lib/dnd/rules';
 
 export default function SheetView({ character, isMaster, pending, requests, patch, onLevelUp }) {
   const def = character.definition;
@@ -18,11 +19,24 @@ export default function SheetView({ character, isMaster, pending, requests, patc
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [choiceOpen, setChoiceOpen] = useState(!!character.choice);
+  const choice = pendingChoice(character);
+  const [choiceOpen, setChoiceOpen] = useState(!!choice);
 
   useEffect(() => {
-    if (character.choice) setChoiceOpen(true);
-  }, [character.choice?.level]);
+    if (choice) setChoiceOpen(true);
+  }, [choice?.level, choice?.asiPoints, choice?.expertise]);
+
+  useEffect(() => {
+    if (!isMaster || !choice || character.choice) return;
+    patch(character.id, {
+      choice: {
+        level: choice.level,
+        asi: choice.asi,
+        asiPoints: choice.asiPoints,
+        expertise: choice.expertise,
+      },
+    });
+  }, [isMaster, character.id, character.choice, choice?.level, choice?.asiPoints, choice?.expertise]);
 
   const list = requests || (pending ? [pending] : []);
   const update = (patchState) => {
@@ -41,7 +55,21 @@ export default function SheetView({ character, isMaster, pending, requests, patc
     setError('');
     try {
       if (isMaster) {
-        await patch(character.id, { definition: newDef, closed: true, hp_rolls: character.hp_rolls, state: hp != null ? { ...character.state, hp } : character.state });
+        const prev = character.definition?.level || 1;
+        const payload = {
+          definition: newDef,
+          closed: true,
+          hp_rolls: character.hp_rolls,
+          state: hp != null ? { ...character.state, hp } : character.state,
+        };
+        if (newDef.level > prev) {
+          const asiPoints = unspentAsiPoints(newDef);
+          const expertise = unspentExpertiseSlots(newDef);
+          if (asiPoints || expertise) {
+            payload.choice = { level: newDef.level, asi: asiPoints > 0, asiPoints, expertise };
+          }
+        }
+        await patch(character.id, payload);
       } else {
         await submitProposal(character, newDef, list);
       }
@@ -62,15 +90,27 @@ export default function SheetView({ character, isMaster, pending, requests, patc
           <p className="text-amber-200/90">Il master deve ancora confermare le modifiche.</p>
         </div>
       )}
+      {isMaster && choice && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-100/90">
+          Il giocatore ha ancora punti del livello da assegnare
+          {choice.asiPoints ? ` (${choice.asiPoints} ai punteggi)` : ''}
+          {choice.expertise ? ` e ${choice.expertise} maestria` : ''}.
+        </div>
+      )}
       <VitalsBlock def={def} state={state} isMaster={isMaster} onUpdate={update} />
       <AbilitiesBlock
         def={def}
         state={state}
-        choice={!isMaster ? character.choice : null}
+        choice={!isMaster ? choice : null}
         onOpenChoice={() => setChoiceOpen(true)}
       />
-      {!isMaster && character.choice && choiceOpen && (
-        <ChoicePanel character={character} onDone={() => setChoiceOpen(false)} />
+      {!isMaster && choice && choiceOpen && character.choice && (
+        <ChoicePanel character={character} choice={choice} onDone={() => setChoiceOpen(false)} />
+      )}
+      {!isMaster && choice && !character.choice && (
+        <div className="rounded-xl border border-border p-4 text-sm text-muted-foreground">
+          Hai punti da assegnare: chiedi al master di aprire un attimo la tua scheda, poi ricarica.
+        </div>
       )}
       <MagicBlock def={def} state={state} onUpdate={update} />
       <FeaturesBlock def={def} />

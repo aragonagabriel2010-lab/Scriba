@@ -7,7 +7,7 @@ export default function ScoresStep({ def, setDef, role }) {
   const budget = scoreBudget(def, role);
   const budgetMode = budget != null;
   const min = budgetMode ? 8 : 3;
-  const max = budgetMode ? (role === 'libera' ? 20 : 15) : 20;
+  const max = budgetMode ? 15 : 20;
   const race = RACES[def.race];
   const spent = pointBuySpent(def.scores);
   const remaining = budgetMode ? Math.max(0, budget.total - spent) : null;
@@ -34,9 +34,7 @@ export default function ScoresStep({ def, setDef, role }) {
             <span className="ml-2 text-lg text-muted-foreground">/ {budget.total}</span>
           </p>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            {budget.fromLevel > 0
-              ? `${budget.creation} di creazione + ${budget.fromLevel} dal livello ${def.level}.`
-              : `${budget.creation} punti di creazione. Ogni punteggio base va da 8 a ${max}.`}
+            {budget.total} punti di creazione (punteggi da 8 a {max}). I punti che arrivano salendo di livello si mettono dopo, qui in scheda.
             {' '}Non puoi andare sotto zero.
           </p>
           {spent > budget.total && (

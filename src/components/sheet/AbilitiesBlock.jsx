@@ -12,20 +12,25 @@ export default function AbilitiesBlock({ def, state, choice, onOpenChoice }) {
   const init = mod(scores.des);
   const speed = RACES[def.race]?.speed ?? 9;
   const passive = 10 + skillBonus(def, 'Percezione');
+  const points = choice?.asiPoints || 0;
 
   return (
     <Section
       title="Caratteristiche"
       action={choice ? (
-        <button type="button" onClick={onOpenChoice} className="btn-primary h-8 px-3 text-xs">
-          Usa i punti
+        <button type="button" onClick={onOpenChoice} className="btn-primary h-9 px-4 text-sm shrink-0">
+          Metti i punti{points ? ` (${points})` : ''}
         </button>
       ) : null}
     >
       {choice && (
-        <p className="mb-4 text-sm text-amber-200/90">
-          Hai punti da mettere: {choice.asi ? 'aumento di caratteristica' : ''}{choice.asi && choice.expertise ? ' e ' : ''}{choice.expertise ? 'maestria' : ''}.
-        </p>
+        <button type="button" onClick={onOpenChoice} className="mb-4 w-full rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-left">
+          <p className="text-sm text-primary font-medium">Hai punti del livello da assegnare</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {points ? `${points} ai punteggi` : ''}{points && choice.expertise ? ' · ' : ''}{choice.expertise ? `${choice.expertise} maestria` : ''}
+            {' · '}Tocca qui o il tasto sopra.
+          </p>
+        </button>
       )}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {ABILITIES.map((ab) => {

@@ -100,6 +100,35 @@ export function expertiseAllowed(classKey, level) {
   return Object.entries(EXPERTISE[classKey] || {}).reduce((s, [l, n]) => s + (level >= +l ? n : 0), 0);
 }
 
+export function asiSpent(def) {
+  return ABILITY_KEYS.reduce((sum, key) => sum + (Number(def?.asi?.[key]) || 0), 0);
+}
+
+export function unspentAsiPoints(def) {
+  if (!def?.classKey) return 0;
+  return Math.max(0, asiPointsAt(def.classKey, def.level) - asiSpent(def));
+}
+
+export function unspentExpertiseSlots(def) {
+  if (!def?.classKey) return 0;
+  return Math.max(0, expertiseAllowed(def.classKey, def.level) - (def.expertise?.length || 0));
+}
+
+/** Scelta punti ancora da fare: dal level-up, oppure ricavata dai punti non spesi. */
+export function pendingChoice(character) {
+  if (character?.choice) {
+    const choice = character.choice;
+    const points = choice.asiPoints != null ? choice.asiPoints : (choice.asi ? 2 : 0);
+    return { ...choice, asi: points > 0 || !!choice.asi, asiPoints: points, expertise: choice.expertise || 0 };
+  }
+  const def = character?.definition;
+  if (!def) return null;
+  const asiPoints = unspentAsiPoints(def);
+  const expertise = unspentExpertiseSlots(def);
+  if (!asiPoints && !expertise) return null;
+  return { level: def.level, asi: asiPoints > 0, asiPoints, expertise };
+}
+
 export function skillBonus(def, name) {
   const skill = SKILLS.find((s) => s.name === name);
   const pb = profBonus(def.level);
@@ -169,12 +198,10 @@ export function asiPointsAt(classKey, level) {
   return (ASI_LEVELS[classKey] || ASI_LEVELS.default).filter((item) => item <= (level || 1)).length * 2;
 }
 
-/** Punti disponibili per i punteggi: 27 di creazione, più +2 per ogni aumento previsto dal livello (personaggio libero). */
+/** Punti disponibili per i punteggi base in creazione/modifica: sempre 27. I punti del livello si assegnano dopo, in Caratteristiche. */
 export function scoreBudget(def, role) {
   if (role === 'master') return null;
-  const creation = 27;
-  const fromLevel = role === 'libera' ? asiPointsAt(def.classKey, def.level) : 0;
-  return { creation, fromLevel, total: creation + fromLevel };
+  return { creation: 27, fromLevel: 0, total: 27 };
 }
 
 export function basicErrors(def) {
