@@ -2,10 +2,8 @@ import {
   collection,
   doc,
   onSnapshot,
-  query,
   runTransaction,
   updateDoc,
-  where,
 } from 'firebase/firestore'
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { app, db } from './firebase'
@@ -34,6 +32,12 @@ function fail(err) {
   if (code === 'auth/operation-not-allowed') throw new Error('L’accesso senza account non è attivo.')
   if (code === 'unavailable' || code === 'auth/network-request-failed') throw new Error('Connessione assente. Riprova.')
   throw new Error('Qualcosa è andato storto.')
+}
+
+function characterIdFor(name) {
+  const key = name.toLowerCase().replace(/\//g, '')
+  if (!key || key === '.' || key === '..') throw italian('Scrivi il tuo nome.')
+  return key
 }
 
 function italian(message) {
@@ -168,23 +172,22 @@ async function joinTableNow(rawCode, rawName) {
     }
     return { role: 'master', token: user.uid, code }
   }
-  const nameKey = name.toLowerCase()
+  const nameKey = characterIdFor(name)
   const chars = collection(db, 'tables', code, 'characters')
-  const characterId = doc(chars).id
+  const characterRef = doc(chars, nameKey)
   try {
     const joined = await runTransaction(db, async (tx) => {
       const tableSnap = await tx.get(ref)
       if (!tableSnap.exists()) throw italian('Nessun tavolo con questo codice.')
-      const found = await tx.get(query(chars, where('name_key', '==', nameKey)))
-      if (!found.empty) {
-        const existing = found.docs[0]
-        if (existing.data().player_uid !== user.uid) tx.update(existing.ref, { player_uid: user.uid })
+      const existing = await tx.get(characterRef)
+      if (existing.exists()) {
+        if (existing.data().player_uid !== user.uid) tx.update(characterRef, { player_uid: user.uid })
         return { characterId: existing.id }
       }
       const count = tableSnap.data().player_count || 0
       if (count >= 7) throw italian('Il tavolo è pieno: al massimo 8 persone.')
-      tx.set(doc(chars, characterId), {
-        id: characterId,
+      tx.set(characterRef, {
+        id: nameKey,
         table_code: code,
         player_name: name,
         name_key: nameKey,
@@ -198,8 +201,8 @@ async function joinTableNow(rawCode, rawName) {
         choice: null,
         created_date: Date.now(),
       })
-      tx.update(ref, { player_count: count + 1, last_join_id: characterId })
-      return { characterId }
+      tx.update(ref, { player_count: count + 1, last_join_id: nameKey })
+      return { characterId: nameKey }
     })
     return { role: 'player', token: user.uid, code, characterId: joined.characterId }
   } catch (err) {
