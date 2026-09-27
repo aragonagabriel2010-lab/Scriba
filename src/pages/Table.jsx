@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { clearSession, getSession } from '@/lib/session';
 import useTable from '@/hooks/useTable';
+import useRequestNotify from '@/hooks/useRequestNotify';
 import TopBar from '@/components/table/TopBar';
 import TableView from '@/components/table/TableView';
 import RequestsView from '@/components/requests/RequestsView';
@@ -31,6 +32,7 @@ export default function Table() {
   const { table, characters, requests, patchCharacter, patchTable } = useTable(code);
   const [tab, setTab] = useState(session?.role === 'master' ? 'tavolo' : 'scheda');
   const [viewId, setViewId] = useState(null);
+  useRequestNotify(requests, session?.role === 'master');
 
   useEffect(() => {
     if (table === undefined) return;
@@ -71,7 +73,15 @@ export default function Table() {
             {viewing && isMaster ? (
               <MasterSheet character={viewing} pending={viewingPending} patch={patchCharacter} onBack={() => setViewId(null)} />
             ) : tab === 'tavolo' ? (
-              <TableView table={table} characters={characters} requests={requests} isMaster={isMaster} onOpen={(id) => setViewId(id)} onSaveNotes={(text) => patchTable(table.id, { notes: text })} />
+              <TableView
+                table={table}
+                characters={characters}
+                requests={requests}
+                isMaster={isMaster}
+                onOpen={(id) => setViewId(id)}
+                onSaveNotes={(text) => patchTable(table.id, { notes: text })}
+                onSaveTable={(data) => patchTable(table.id, data)}
+              />
             ) : tab === 'richieste' && isMaster ? (
               <RequestsView requests={requests} characters={characters} patch={patchCharacter} />
             ) : tab === 'dadi' ? (

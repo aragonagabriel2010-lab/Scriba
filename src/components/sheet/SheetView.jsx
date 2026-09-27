@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import SheetHeader from './SheetHeader';
 import VitalsBlock from './VitalsBlock';
@@ -12,6 +12,7 @@ import SheetEditor from './editor/SheetEditor';
 import { submitProposal, submitStateChange, spendHitDie } from '@/lib/actions';
 import ChoicePanel from './ChoicePanel';
 import { pendingChoice, unspentAsiPoints, unspentExpertiseSlots } from '@/lib/dnd/rules';
+import { exportSheetImage, exportSheetPdf } from '@/lib/export';
 
 export default function SheetView({ character, isMaster, pending, requests, patch, onLevelUp }) {
   const def = character.definition;
@@ -81,9 +82,22 @@ export default function SheetView({ character, isMaster, pending, requests, patc
     }
   };
 
+  const sheetRef = useRef(null);
+  const fileName = (def.name || 'scheda').replace(/[^\w\-]+/g, '_');
+
   return (
-    <div className="max-w-3xl mx-auto px-5 py-8 pb-32 space-y-6">
-      <SheetHeader def={def} character={character} isMaster={isMaster} onEdit={updateDef} onAppearance={(appearance) => update({ appearance })} onOpen={() => setEditing(true)} onLevelUp={onLevelUp} />
+    <div ref={sheetRef} className="max-w-3xl mx-auto px-5 py-8 pb-32 space-y-6 bg-background">
+      <SheetHeader
+        def={def}
+        character={character}
+        isMaster={isMaster}
+        onEdit={updateDef}
+        onAppearance={(appearance) => update({ appearance })}
+        onOpen={() => setEditing(true)}
+        onLevelUp={onLevelUp}
+        onExportPng={() => exportSheetImage(sheetRef.current, `${fileName}.png`)}
+        onExportPdf={() => exportSheetPdf(sheetRef.current, `${fileName}.pdf`)}
+      />
       {error && !editing && <p className="text-sm text-destructive">{error}</p>}
       {!isMaster && pending && !editing && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">

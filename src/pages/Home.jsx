@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getSession } from '@/lib/session';
 import HomeForm from '@/components/home/HomeForm';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const initialCode = params.get('codice') || '';
   useEffect(() => { if (getSession()) navigate('/tavolo', { replace: true }); }, [navigate]);
 
   return (
@@ -16,7 +18,7 @@ export default function Home() {
         <p className="mt-5 text-muted-foreground leading-relaxed">
           Le schede dei personaggi, condivise in tempo reale. Dal telefono o dal computer, senza account.
         </p>
-        <HomeForm onDone={() => navigate('/tavolo')} />
+        <HomeForm initialCode={initialCode} onDone={() => navigate('/tavolo')} />
       </motion.div>
       <p className="mt-20 text-xs text-muted-foreground/60">Regole dall’SRD 5.1 · CC BY 4.0</p>
     </div>

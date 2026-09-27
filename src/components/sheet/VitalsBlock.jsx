@@ -71,7 +71,7 @@ export default function VitalsBlock({ def, state, isMaster, onUpdate }) {
           const active = (state.conditions || []).includes(c);
           return (
             <button key={c} onClick={() => onUpdate({ conditions: active ? state.conditions.filter((x) => x !== c) : [...(state.conditions || []), c] })}
-              className={`px-2.5 py-1 rounded-full text-xs border transition ${active ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground'}`}>
+              className={`min-h-11 px-4 py-2 rounded-xl text-sm border transition ${active ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground'}`}>
               {c}
             </button>
           );

@@ -1,14 +1,25 @@
-import React from 'react';
-import { Pencil, ArrowLeft, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, ArrowLeft, TrendingUp, FileDown, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
 import InlineText from '@/components/scriba/InlineText';
 import { RACES, CLASSES, SUBCLASSES, PATHS } from '@/lib/dnd/data';
 
-export default function SheetHeader({ def, character, isMaster, onEdit, onAppearance, onOpen, onLevelUp }) {
+export default function SheetHeader({ def, character, isMaster, onEdit, onAppearance, onOpen, onLevelUp, onExportPdf, onExportPng }) {
   const state = character.state || {};
   const race = RACES[def.race];
   const cls = CLASSES[def.classKey];
   const canLevel = isMaster && def.level < 20;
+  const [exporting, setExporting] = useState('');
+
+  const runExport = async (kind) => {
+    setExporting(kind);
+    try {
+      if (kind === 'pdf') await onExportPdf?.();
+      else await onExportPng?.();
+    } finally {
+      setExporting('');
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-4">
@@ -31,14 +42,20 @@ export default function SheetHeader({ def, character, isMaster, onEdit, onAppear
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button onClick={onOpen} className="btn-primary h-9 px-4 text-sm">
+        <button onClick={onOpen} className="btn-primary h-11 px-4 text-sm">
           <Pencil className="w-3.5 h-3.5" /> {isMaster ? 'Modifica tutta la scheda' : 'Modifica la scheda'}
         </button>
         {canLevel && (
-          <button onClick={onLevelUp} className="btn-ghost h-9 px-4 text-sm">
+          <button onClick={onLevelUp} className="btn-ghost h-11 px-4 text-sm">
             <TrendingUp className="w-3.5 h-3.5" /> Fallo salire di livello
           </button>
         )}
+        <button type="button" disabled={!!exporting} onClick={() => void runExport('png')} className="btn-ghost h-11 px-4 text-sm">
+          <Image className="w-3.5 h-3.5" /> {exporting === 'png' ? 'Attendi…' : 'Esporta PNG'}
+        </button>
+        <button type="button" disabled={!!exporting} onClick={() => void runExport('pdf')} className="btn-ghost h-11 px-4 text-sm">
+          <FileDown className="w-3.5 h-3.5" /> {exporting === 'pdf' ? 'Attendi…' : 'Esporta PDF'}
+        </button>
       </div>
     </motion.div>
   );

@@ -256,10 +256,13 @@ export function updateTable(id, data) {
 async function updateTableNow(id, data) {
   const session = getSession()
   if (!session?.code || session.role !== 'master' || id !== session.code) throw italian('Solo il master aggiorna il tavolo.')
-  const { notes } = data || {}
-  if (notes == null) return
+  const payload = {}
+  if (data.notes != null) payload.notes = String(data.notes)
+  if (data.initiative != null) payload.initiative = data.initiative
+  if (data.turn_index != null) payload.turn_index = Number(data.turn_index) || 0
+  if (!Object.keys(payload).length) return
   try {
-    await updateDoc(tableRef(session.code), { notes: String(notes) })
+    await updateDoc(tableRef(session.code), payload)
   } catch (err) {
     fail(err)
   }

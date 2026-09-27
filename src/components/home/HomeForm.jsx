@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { createTable, joinTable } from '@/lib/actions';
 
-export default function HomeForm({ onDone }) {
-  const [mode, setMode] = useState('join');
-  const [code, setCode] = useState('');
+export default function HomeForm({ onDone, initialCode = '' }) {
+  const [mode, setMode] = useState(initialCode ? 'join' : 'join');
+  const [code, setCode] = useState(String(initialCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4));
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

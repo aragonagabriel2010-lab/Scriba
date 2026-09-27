@@ -41,18 +41,19 @@ export default function MagicBlock({ def, state, onUpdate }) {
       )}
 
       {Object.keys(slots).length > 0 && (
-        <div className="mt-5 space-y-2">
+        <div className="mt-5 space-y-3">
           {Object.entries(slots).map(([lvl, n]) => {
             const used = state.slotsUsed?.[lvl] || 0;
             return (
               <div key={lvl} className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground w-12">{levelLabel(+lvl)}</span>
-                <div className="flex gap-1.5 flex-wrap">
+                <span className="text-sm text-muted-foreground w-14">{levelLabel(+lvl)}</span>
+                <div className="flex gap-2 flex-wrap">
                   {Array.from({ length: n }).map((_, i) => {
                     const isUsed = i < used;
                     return (
                       <button key={i} onClick={() => onUpdate({ slotsUsed: { ...state.slotsUsed, [lvl]: isUsed ? used - 1 : used + 1 } })}
-                        className={`w-5 h-5 rounded-full border transition ${isUsed ? 'border-border bg-transparent' : 'border-primary/60 bg-primary/20'}`} />
+                        className={`h-11 w-11 rounded-xl border transition ${isUsed ? 'border-border bg-transparent' : 'border-primary/60 bg-primary/20'}`}
+                        aria-label={isUsed ? 'Slot usato' : 'Slot disponibile'} />
                     );
                   })}
                 </div>
