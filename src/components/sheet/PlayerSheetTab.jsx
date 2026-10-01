@@ -5,7 +5,7 @@ import SheetView from './SheetView';
 import SheetEditor from './editor/SheetEditor';
 import { submitProposal } from '@/lib/actions';
 
-export default function PlayerSheetTab({ character, requests, patch }) {
+export default function PlayerSheetTab({ character, requests, patch, onRoll }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -62,7 +62,7 @@ export default function PlayerSheetTab({ character, requests, patch }) {
 
   return (
     <>
-      <SheetView character={character} isMaster={false} pending={pending} requests={requests} patch={patch} />
+      <SheetView character={character} isMaster={false} pending={pending} requests={requests} patch={patch} onRoll={onRoll} />
       <AnimatePresence>
         {editing && (
           <SheetEditor

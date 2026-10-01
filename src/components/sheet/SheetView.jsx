@@ -14,7 +14,7 @@ import ChoicePanel from './ChoicePanel';
 import { pendingChoice, unspentAsiPoints, unspentExpertiseSlots } from '@/lib/dnd/rules';
 import { exportSheetImage, exportSheetPdf } from '@/lib/export';
 
-export default function SheetView({ character, isMaster, pending, requests, patch, onLevelUp }) {
+export default function SheetView({ character, isMaster, pending, requests, patch, onLevelUp, onRoll }) {
   const def = character.definition;
   const state = character.state || {};
   const [editing, setEditing] = useState(false);
@@ -117,6 +117,7 @@ export default function SheetView({ character, isMaster, pending, requests, patc
         state={state}
         choice={!isMaster ? choice : null}
         onOpenChoice={() => setChoiceOpen(true)}
+        onRoll={onRoll}
       />
       {!isMaster && choice && choiceOpen && character.choice && (
         <ChoicePanel character={character} choice={choice} onDone={() => setChoiceOpen(false)} />

@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { clearSession, getSession } from '@/lib/session';
 import useTable from '@/hooks/useTable';
 import useRequestNotify from '@/hooks/useRequestNotify';
+import useTurnNotify from '@/hooks/useTurnNotify';
 import TopBar from '@/components/table/TopBar';
+import TurnBanner from '@/components/table/TurnBanner';
 import TableView from '@/components/table/TableView';
 import RequestsView from '@/components/requests/RequestsView';
 import ManualView from '@/components/manual/ManualView';
@@ -45,7 +47,10 @@ export default function Table() {
   } = useTable(code);
   const [tab, setTab] = useState(session?.role === 'master' ? 'tavolo' : 'scheda');
   const [viewId, setViewId] = useState(null);
+  const [dicePreset, setDicePreset] = useState(null);
+  const [diceCharacterId, setDiceCharacterId] = useState(null);
   useRequestNotify(requests, session?.role === 'master');
+  useTurnNotify(table, !!table);
 
   useEffect(() => {
     if (table === undefined) return;
@@ -68,6 +73,7 @@ export default function Table() {
 
   const isMaster = session.role === 'master';
   const myCharacter = characters.find((c) => c.id === session.characterId);
+  const diceCharacter = (diceCharacterId && characters.find((c) => c.id === diceCharacterId)) || myCharacter;
   const tabs = isMaster ? MASTER_TABS : PLAYER_TABS;
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const tabsWithBadge = isMaster && pendingCount ? tabs.map((t) => t.key === 'richieste' ? { ...t, badge: pendingCount } : t) : tabs;
@@ -77,14 +83,43 @@ export default function Table() {
   const leave = () => { clearSession(); navigate('/', { replace: true }); };
   const setTabSafe = (k) => { setViewId(null); setTab(k); };
 
+  const openRoll = (preset, characterId) => {
+    setDiceCharacterId(characterId || session.characterId || null);
+    setDicePreset({ ...preset, _at: Date.now() });
+    setViewId(null);
+    setTab('dadi');
+  };
+
+  const advanceTurn = () => {
+    const entries = Array.isArray(table.initiative) ? table.initiative : [];
+    if (!entries.length) return;
+    const turn = Math.min(table.turn_index || 0, entries.length - 1);
+    patchTable(table.id, {
+      initiative: entries,
+      turn_index: (turn + 1) % entries.length,
+    });
+  };
+
   return (
     <div className="min-h-screen pb-24">
       <TopBar code={table.code} name={isMaster ? table.master_name : myCharacter?.player_name} isMaster={isMaster} tabs={tabsWithBadge} tab={viewId ? 'tavolo' : tab} setTab={setTabSafe} onLeave={leave} />
+      <TurnBanner
+        table={table}
+        characters={isMaster ? characters : (myCharacter ? [myCharacter] : [])}
+        isMaster={isMaster}
+        onAdvance={isMaster ? advanceTurn : undefined}
+      />
       <main className="max-w-3xl mx-auto px-5 py-8">
         <AnimatePresence mode="wait">
           <motion.div key={viewId || tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             {viewing && isMaster ? (
-              <MasterSheet character={viewing} pending={viewingPending} patch={patchCharacter} onBack={() => setViewId(null)} />
+              <MasterSheet
+                character={viewing}
+                pending={viewingPending}
+                patch={patchCharacter}
+                onBack={() => setViewId(null)}
+                onRoll={(preset) => openRoll(preset, viewing.id)}
+              />
             ) : tab === 'tavolo' ? (
               <TableView
                 table={table}
@@ -107,11 +142,20 @@ export default function Table() {
             ) : tab === 'richieste' && isMaster ? (
               <RequestsView requests={requests} characters={characters} patch={patchCharacter} />
             ) : tab === 'dadi' ? (
-              <DiceView character={myCharacter} />
+              <DiceView
+                character={diceCharacter}
+                preset={dicePreset}
+                onPresetConsumed={() => setDicePreset(null)}
+              />
             ) : tab === 'manuale' ? (
               <ManualView />
             ) : tab === 'scheda' && myCharacter ? (
-              <PlayerSheetTab character={myCharacter} requests={requests} patch={patchCharacter} />
+              <PlayerSheetTab
+                character={myCharacter}
+                requests={requests}
+                patch={patchCharacter}
+                onRoll={(preset) => openRoll(preset, myCharacter.id)}
+              />
             ) : null}
           </motion.div>
         </AnimatePresence>

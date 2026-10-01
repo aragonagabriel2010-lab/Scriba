@@ -7,17 +7,22 @@ export function attackBonusFor(def, abilityKey) {
   return mod(scores[ab]) + profBonus(def.level || 1)
 }
 
-/** Tiro d20 + bonus vs CA del bersaglio. */
+/** Tiro d20 + bonus vs CA. 20 = critico, 1 = mancato automatico. */
 export function resolveVsAc({ d20, bonus, ac }) {
   const targetAc = Number(ac) || 10
   const roll = Number(d20) || 0
-  const total = roll + (Number(bonus) || 0)
-  const hit = total >= targetAc
-  return { roll, bonus, total, ac: targetAc, hit }
+  const atkBonus = Number(bonus) || 0
+  const total = roll + atkBonus
+  const fumble = roll === 1
+  const crit = roll === 20
+  const hit = fumble ? false : crit ? true : total >= targetAc
+  return { roll, bonus: atkBonus, total, ac: targetAc, hit, crit, fumble }
 }
 
-export function formatVsAc({ roll, bonus, total, ac, hit }) {
+export function formatVsAc({ roll, bonus, total, ac, hit, crit, fumble }) {
   const cmp = `${roll}${bonus >= 0 ? `+${bonus}` : bonus}=${total} vs CA ${ac}`
+  if (fumble) return `${cmp} — 1 naturale · Mancato`
+  if (crit) return `${cmp} — 20 naturale · Critico`
   return `${cmp} — ${hit ? 'Colpo' : 'Mancato'}`
 }
 

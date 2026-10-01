@@ -92,10 +92,17 @@ export default function CombatLogPanel({
 
   const canApplyDamage = isAttack && target && attackResolve?.hit && damageAmount > 0
   const hpAfter = canApplyDamage ? applyDamage(target.hp, target.hpMax, damageAmount).hp : null
+  const damageDice = attackResolve?.crit ? dmgCount * 2 : dmgCount
 
   const extraParts = []
   if (attackResolve) extraParts.push(formatVsAc(attackResolve))
-  if (canApplyDamage) extraParts.push(`${damageAmount} danni, restano ${hpAfter} PF`)
+  if (canApplyDamage) {
+    extraParts.push(
+      attackResolve?.crit
+        ? `${damageAmount} danni (critico), restano ${hpAfter} PF`
+        : `${damageAmount} danni, restano ${hpAfter} PF`,
+    )
+  }
   const extra = extraParts.length ? `(${extraParts.join(', ')})` : ''
 
   const preview = attacker && target
@@ -113,6 +120,8 @@ export default function CombatLogPanel({
 
   const roll = () => {
     setManual('')
+    setDmgResult(null)
+    setDmgManual('')
     if (sides === 20 && count === 1 && mode !== 'normal') {
       const a = rollDie(20)
       const b = rollDie(20)
@@ -127,8 +136,8 @@ export default function CombatLogPanel({
 
   const rollDamage = () => {
     setDmgManual('')
-    const rolls = Array.from({ length: dmgCount }, () => rollDie(dmgSides))
-    setDmgResult({ sides: dmgSides, rolls, total: rolls.reduce((s, n) => s + n, 0) })
+    const rolls = Array.from({ length: damageDice }, () => rollDie(dmgSides))
+    setDmgResult({ sides: dmgSides, rolls, total: rolls.reduce((s, n) => s + n, 0), crit: !!attackResolve?.crit })
   }
 
   const save = async () => {
@@ -324,7 +333,7 @@ export default function CombatLogPanel({
             <p className="font-mono text-2xl tabular-nums">{formatRoll(result)}</p>
           )}
           {attackResolve && (
-            <p className={`text-sm ${attackResolve.hit ? 'text-emerald-300/90' : 'text-rose-300/90'}`}>
+            <p className={`text-sm ${attackResolve.fumble ? 'text-rose-300/90' : attackResolve.crit ? 'text-emerald-300/90' : attackResolve.hit ? 'text-emerald-300/90' : 'text-rose-300/90'}`}>
               {formatVsAc(attackResolve)}
             </p>
           )}
@@ -332,7 +341,10 @@ export default function CombatLogPanel({
 
         {isAttack && attackResolve?.hit && (
           <div className="space-y-3 border-t border-border pt-4">
-            <p className="eyebrow">Danno</p>
+            <p className="eyebrow">Danno{attackResolve.crit ? ' · critico (2× dadi)' : ''}</p>
+            {attackResolve.crit && (
+              <p className="text-xs text-emerald-300/80">Critico: si tirano il doppio dei dadi del danno ({damageDice}d{dmgSides}).</p>
+            )}
             <div className="flex flex-wrap gap-2">
               {[4, 6, 8, 10, 12].map((die) => (
                 <button
