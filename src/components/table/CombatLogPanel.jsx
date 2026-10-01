@@ -2,7 +2,14 @@ import React, { useMemo, useState } from 'react'
 import { Dice5, Trash2 } from 'lucide-react'
 import { ABILITIES } from '@/lib/dnd/data'
 import { rollDie } from '@/lib/dnd/rules'
-import { applyDamageToEnemy, attackBonusFor, formatVsAc, resolveVsAc } from '@/lib/combat'
+import {
+  applyDamage,
+  applyDamageToEnemy,
+  attackBonusFor,
+  combatantsFrom,
+  formatVsAc,
+  resolveVsAc,
+} from '@/lib/combat'
 
 const ACTIONS = [
   { key: 'attacca', label: 'attacca', kind: 'attack' },
@@ -26,16 +33,28 @@ export function buildCombatLine({ attacker, verb, ability, rollText, target, ext
   return `${attacker} ${verb}${withAbility}${withRoll} a ${target}${tail}`
 }
 
-export default function CombatLogPanel({ characters, enemies, entries, onAdd, onClear, onDelete, onPatchEnemy }) {
-  const players = useMemo(
-    () => characters.filter((c) => c.definition),
-    [characters],
-  )
+function optionLabel(c) {
+  const tag = c.kind === 'pc' ? 'PG' : 'Nemico'
+  return `${c.name} · ${tag} · CA ${c.ac} · ${c.hp}/${c.hpMax} PF`
+}
 
-  const [attackerId, setAttackerId] = useState('')
-  const [targetId, setTargetId] = useState('')
+export default function CombatLogPanel({
+  characters,
+  enemies,
+  entries,
+  onAdd,
+  onClear,
+  onDelete,
+  onPatchEnemy,
+  onPatchCharacter,
+}) {
+  const combatants = useMemo(() => combatantsFrom(characters, enemies), [characters, enemies])
+
+  const [attackerKey, setAttackerKey] = useState('')
+  const [targetKey, setTargetKey] = useState('')
   const [ability, setAbility] = useState('for')
   const [verb, setVerb] = useState('attacca')
+  const [enemyBonus, setEnemyBonus] = useState(0)
   const [sides, setSides] = useState(20)
   const [count, setCount] = useState(1)
   const [mode, setMode] = useState('normal')
@@ -48,16 +67,15 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const attackerChar = players.find((p) => p.id === attackerId)
-  const attacker = attackerChar
-    ? { id: attackerChar.id, name: attackerChar.definition.name || attackerChar.player_name }
-    : null
-  const target = enemies.find((e) => e.id === targetId)
+  const attacker = combatants.find((c) => c.key === attackerKey) || null
+  const target = combatants.find((c) => c.key === targetKey) || null
   const action = ACTIONS.find((a) => a.key === verb) || ACTIONS[0]
   const isAttack = action.kind === 'attack'
   const abilityLabel = ABILITIES.find((a) => a.key === ability)?.label || ''
   const verbLabel = action.label
-  const bonus = attackerChar ? attackBonusFor(attackerChar.definition, ability) : 0
+  const bonus = attacker?.kind === 'pc'
+    ? attackBonusFor(attacker.definition, ability)
+    : (Number(enemyBonus) || 0)
 
   const d20Face = manual.trim()
     ? Number(manual) || 0
@@ -73,7 +91,7 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
     : (dmgResult ? dmgResult.total : 0)
 
   const canApplyDamage = isAttack && target && attackResolve?.hit && damageAmount > 0
-  const hpAfter = canApplyDamage ? applyDamageToEnemy(target, damageAmount).hp : null
+  const hpAfter = canApplyDamage ? applyDamage(target.hp, target.hpMax, damageAmount).hp : null
 
   const extraParts = []
   if (attackResolve) extraParts.push(formatVsAc(attackResolve))
@@ -115,12 +133,13 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
 
   const save = async () => {
     if (!attacker || !target) return
+    if (attacker.key === target.key) {
+      setError('Attaccante e subente devono essere diversi.')
+      return
+    }
     if (isAttack && sides === 20 && !attackResolve) {
       setError('Lancia o scrivi il tiro sul d20 per confrontarlo con la CA.')
       return
-    }
-    if (isAttack && attackResolve && !attackResolve.hit) {
-      setError('')
     }
     setBusy(true)
     setError('')
@@ -142,8 +161,15 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
         target_ac: target.ac,
         damage: canApplyDamage ? damageAmount : 0,
       })
-      if (canApplyDamage && onPatchEnemy) {
-        await onPatchEnemy(applyDamageToEnemy(target, damageAmount), target.id)
+      if (canApplyDamage) {
+        if (target.kind === 'enemy' && onPatchEnemy) {
+          await onPatchEnemy(applyDamageToEnemy(target.enemy, damageAmount), target.id)
+        } else if (target.kind === 'pc' && onPatchCharacter) {
+          const { hp } = applyDamage(target.hp, target.hpMax, damageAmount)
+          await onPatchCharacter(target.id, {
+            state: { ...target.character.state, hp },
+          })
+        }
       }
       setResult(null)
       setManual('')
@@ -156,37 +182,50 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
     }
   }
 
-  const canRegister = attacker && target && rollText && (!isAttack || sides !== 20 || attackResolve)
+  const canRegister = attacker && target && attacker.key !== target.key && rollText && (!isAttack || sides !== 20 || attackResolve)
+  const attackerOptions = combatants.filter((c) => c.key !== targetKey)
+  const targetOptions = combatants.filter((c) => c.key !== attackerKey)
 
   return (
     <div className="space-y-4">
       <div>
         <p className="eyebrow">Azioni</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Scegli giocatore e nemico: sul d20 confrontiamo la CA e, se colpisce, togliamo i PF al nemico.
+          Attaccante e subente possono essere PG o nemici. Sul d20 confrontiamo la CA e, se colpisce, togliamo i PF.
         </p>
       </div>
 
       <div className="rounded-xl border border-border p-4 space-y-4">
         <div className="grid sm:grid-cols-2 gap-3">
           <label>
-            <span className="eyebrow">Giocatore</span>
-            <select value={attackerId} onChange={(e) => setAttackerId(e.target.value)} className="scriba-input mt-2 h-11">
+            <span className="eyebrow">Attaccante</span>
+            <select value={attackerKey} onChange={(e) => setAttackerKey(e.target.value)} className="scriba-input mt-2 h-11">
               <option value="">Scegli…</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>{p.definition.name || p.player_name}</option>
+              {attackerOptions.map((c) => (
+                <option key={c.key} value={c.key}>{optionLabel(c)}</option>
               ))}
             </select>
-            {attackerChar && isAttack && (
+            {attacker?.kind === 'pc' && isAttack && (
               <p className="mt-1 text-xs text-muted-foreground">Bonus attacco: {bonus >= 0 ? `+${bonus}` : bonus}</p>
+            )}
+            {attacker?.kind === 'enemy' && isAttack && (
+              <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                Bonus attacco
+                <input
+                  type="number"
+                  value={enemyBonus}
+                  onChange={(e) => setEnemyBonus(e.target.value)}
+                  className="scriba-input h-9 w-16 text-center"
+                />
+              </label>
             )}
           </label>
           <label>
-            <span className="eyebrow">Nemico</span>
-            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="scriba-input mt-2 h-11">
+            <span className="eyebrow">Subente</span>
+            <select value={targetKey} onChange={(e) => setTargetKey(e.target.value)} className="scriba-input mt-2 h-11">
               <option value="">Scegli…</option>
-              {enemies.map((e) => (
-                <option key={e.id} value={e.id}>{e.name} · CA {e.ac} · {e.hp}/{e.hpMax} PF</option>
+              {targetOptions.map((c) => (
+                <option key={c.key} value={c.key}>{optionLabel(c)}</option>
               ))}
             </select>
           </label>
@@ -355,8 +394,7 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
           {busy ? 'Attendi…' : 'Registra'}
         </button>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {!players.length && <p className="text-sm text-muted-foreground">Serve almeno un personaggio chiuso.</p>}
-        {!enemies.length && <p className="text-sm text-muted-foreground">Crea prima un nemico.</p>}
+        {!combatants.length && <p className="text-sm text-muted-foreground">Servono personaggi o nemici sul tavolo.</p>}
       </div>
 
       <div className="flex items-center justify-between gap-3">

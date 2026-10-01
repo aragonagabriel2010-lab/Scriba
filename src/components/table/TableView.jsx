@@ -24,6 +24,7 @@ export default function TableView({
   onDeleteCombatLog,
   onClearCombatLog,
   onPatchEnemy,
+  onPatchCharacter,
 }) {
   const pendingIds = new Set(requests.filter((r) => r.status === 'pending').map((r) => r.character_id))
   const [copied, setCopied] = useState('')
@@ -94,6 +95,7 @@ export default function TableView({
             onDelete={onDeleteCombatLog}
             onClear={onClearCombatLog}
             onPatchEnemy={onPatchEnemy}
+            onPatchCharacter={onPatchCharacter}
           />
         </>
       )}
