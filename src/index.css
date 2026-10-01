@@ -84,4 +84,22 @@
   .step-btn {
     @apply h-8 w-8 rounded-full border border-border grid place-items-center text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none;
   }
+
+  .sheet-hero {
+    background:
+      linear-gradient(180deg, hsl(228 9% 10% / 0.95), hsl(228 10% 6% / 0.55)),
+      radial-gradient(ellipse 90% 70% at 12% 0%, hsl(16 76% 63% / 0.14), transparent 55%);
+  }
+
+  .sheet-hero-glow {
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(36 14% 91% / 0.035) 1px, transparent 0);
+    background-size: 18px 18px;
+    mask-image: linear-gradient(180deg, black, transparent 92%);
+  }
+
+  .sheet-page {
+    background-image:
+      radial-gradient(ellipse 70% 40% at 50% -8%, hsl(16 76% 63% / 0.05), transparent 60%);
+  }
 }

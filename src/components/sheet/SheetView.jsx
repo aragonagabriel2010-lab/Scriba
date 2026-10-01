@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import SheetHero from './SheetHero';
 import SheetHeader from './SheetHeader';
 import VitalsBlock from './VitalsBlock';
 import AbilitiesBlock from './AbilitiesBlock';
@@ -86,7 +87,16 @@ export default function SheetView({ character, isMaster, pending, requests, patc
   const fileName = (def.name || 'scheda').replace(/[^\w\-]+/g, '_');
 
   return (
-    <div ref={sheetRef} className="max-w-3xl mx-auto px-5 py-8 pb-32 space-y-6 bg-background">
+    <div ref={sheetRef} className="sheet-page max-w-3xl mx-auto px-5 py-6 pb-32 space-y-8 bg-background">
+      <SheetHero
+        def={def}
+        state={state}
+        isMaster={isMaster}
+        onEdit={updateDef}
+        onUpdate={update}
+        onRoll={onRoll}
+      />
+
       <SheetHeader
         def={def}
         character={character}
@@ -97,21 +107,24 @@ export default function SheetView({ character, isMaster, pending, requests, patc
         onLevelUp={onLevelUp}
         onExportPng={() => exportSheetImage(sheetRef.current, `${fileName}.png`)}
         onExportPdf={() => exportSheetPdf(sheetRef.current, `${fileName}.pdf`)}
+        showBack={isMaster}
       />
+
       {error && !editing && <p className="text-sm text-destructive">{error}</p>}
       {!isMaster && pending && !editing && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
           <p className="text-amber-200/90">Il master deve ancora confermare le modifiche.</p>
         </div>
       )}
       {isMaster && choice && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-100/90">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-100/90">
           Il giocatore ha ancora punti del livello da assegnare
           {choice.asiPoints ? ` (${choice.asiPoints} ai punteggi)` : ''}
           {choice.expertise ? ` e ${choice.expertise} maestria` : ''}.
         </div>
       )}
-      <VitalsBlock def={def} state={state} isMaster={isMaster} onUpdate={update} />
+
+      <VitalsBlock def={def} state={state} onUpdate={update} />
       <AbilitiesBlock
         def={def}
         state={state}
@@ -123,7 +136,7 @@ export default function SheetView({ character, isMaster, pending, requests, patc
         <ChoicePanel character={character} choice={choice} onDone={() => setChoiceOpen(false)} />
       )}
       {!isMaster && choice && !character.choice && (
-        <div className="rounded-xl border border-border p-4 text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-border/70 p-4 text-sm text-muted-foreground">
           Hai punti da assegnare: chiedi al master di aprire un attimo la tua scheda, poi ricarica.
         </div>
       )}
