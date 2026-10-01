@@ -408,6 +408,9 @@ async function saveCombatLogNow(data) {
     rolls: Array.isArray(data.rolls) ? data.rolls.map((n) => Number(n) || 0).slice(0, 20) : [],
     sides: Number(data.sides) || 20,
     count: Number(data.count) || 1,
+    hit: data.hit == null ? null : !!data.hit,
+    target_ac: Number(data.target_ac) || 0,
+    damage: Math.max(0, Number(data.damage) || 0),
     created_date: Date.now(),
   }
   try {

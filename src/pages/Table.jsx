@@ -101,6 +101,7 @@ export default function Table() {
                 onAddCombatLog={addCombatLog}
                 onDeleteCombatLog={removeCombatLog}
                 onClearCombatLog={wipeCombatLog}
+                onPatchEnemy={patchEnemy}
               />
             ) : tab === 'richieste' && isMaster ? (
               <RequestsView requests={requests} characters={characters} patch={patchCharacter} />

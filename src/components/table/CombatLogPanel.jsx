@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react'
 import { Dice5, Trash2 } from 'lucide-react'
 import { ABILITIES } from '@/lib/dnd/data'
 import { rollDie } from '@/lib/dnd/rules'
+import { applyDamageToEnemy, attackBonusFor, formatVsAc, resolveVsAc } from '@/lib/combat'
 
 const ACTIONS = [
-  { key: 'attacca', label: 'attacca' },
-  { key: 'colpisce', label: 'colpisce' },
-  { key: 'prova', label: 'fa una prova' },
+  { key: 'attacca', label: 'attacca', kind: 'attack' },
+  { key: 'colpisce', label: 'colpisce', kind: 'attack' },
+  { key: 'prova', label: 'fa una prova', kind: 'check' },
 ]
 
 function formatRoll(result) {
@@ -18,15 +19,16 @@ function formatRoll(result) {
   return `${result.total} [${result.rolls.join('+')}]`
 }
 
-export function buildCombatLine({ attacker, verb, ability, rollText, target }) {
+export function buildCombatLine({ attacker, verb, ability, rollText, target, extra = '' }) {
   const withAbility = ability ? ` con ${ability}` : ''
   const withRoll = rollText ? ` con ${rollText}` : ''
-  return `${attacker} ${verb}${withAbility}${withRoll} a ${target}`
+  const tail = extra ? ` ${extra}` : ''
+  return `${attacker} ${verb}${withAbility}${withRoll} a ${target}${tail}`
 }
 
-export default function CombatLogPanel({ characters, enemies, entries, onAdd, onClear, onDelete }) {
+export default function CombatLogPanel({ characters, enemies, entries, onAdd, onClear, onDelete, onPatchEnemy }) {
   const players = useMemo(
-    () => characters.filter((c) => c.definition).map((c) => ({ id: c.id, name: c.definition.name || c.player_name })),
+    () => characters.filter((c) => c.definition),
     [characters],
   )
 
@@ -39,21 +41,55 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
   const [mode, setMode] = useState('normal')
   const [result, setResult] = useState(null)
   const [manual, setManual] = useState('')
+  const [dmgSides, setDmgSides] = useState(8)
+  const [dmgCount, setDmgCount] = useState(1)
+  const [dmgResult, setDmgResult] = useState(null)
+  const [dmgManual, setDmgManual] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const attacker = players.find((p) => p.id === attackerId)
+  const attackerChar = players.find((p) => p.id === attackerId)
+  const attacker = attackerChar
+    ? { id: attackerChar.id, name: attackerChar.definition.name || attackerChar.player_name }
+    : null
   const target = enemies.find((e) => e.id === targetId)
+  const action = ACTIONS.find((a) => a.key === verb) || ACTIONS[0]
+  const isAttack = action.kind === 'attack'
   const abilityLabel = ABILITIES.find((a) => a.key === ability)?.label || ''
-  const verbLabel = ACTIONS.find((a) => a.key === verb)?.label || 'attacca'
+  const verbLabel = action.label
+  const bonus = attackerChar ? attackBonusFor(attackerChar.definition, ability) : 0
+
+  const d20Face = manual.trim()
+    ? Number(manual) || 0
+    : (sides === 20 && result ? result.total : null)
+
+  const attackResolve = isAttack && target && d20Face != null && sides === 20
+    ? resolveVsAc({ d20: d20Face, bonus, ac: target.ac })
+    : null
+
   const rollText = manual.trim() || formatRoll(result)
+  const damageAmount = dmgManual.trim()
+    ? Math.max(0, Number(dmgManual) || 0)
+    : (dmgResult ? dmgResult.total : 0)
+
+  const canApplyDamage = isAttack && target && attackResolve?.hit && damageAmount > 0
+  const hpAfter = canApplyDamage ? applyDamageToEnemy(target, damageAmount).hp : null
+
+  const extraParts = []
+  if (attackResolve) extraParts.push(formatVsAc(attackResolve))
+  if (canApplyDamage) extraParts.push(`${damageAmount} danni, restano ${hpAfter} PF`)
+  const extra = extraParts.length ? `(${extraParts.join(', ')})` : ''
+
   const preview = attacker && target
     ? buildCombatLine({
       attacker: attacker.name,
       verb: verbLabel,
       ability: abilityLabel,
-      rollText,
-      target: target.name,
+      rollText: isAttack && sides === 20 && attackResolve
+        ? `${attackResolve.roll}${bonus >= 0 ? `+${bonus}` : bonus}=${attackResolve.total}`
+        : rollText,
+      target: `${target.name} (CA ${target.ac})`,
+      extra,
     })
     : ''
 
@@ -71,8 +107,21 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
     setResult({ sides, mode: 'normal', rolls, total: rolls.reduce((s, n) => s + n, 0) })
   }
 
+  const rollDamage = () => {
+    setDmgManual('')
+    const rolls = Array.from({ length: dmgCount }, () => rollDie(dmgSides))
+    setDmgResult({ sides: dmgSides, rolls, total: rolls.reduce((s, n) => s + n, 0) })
+  }
+
   const save = async () => {
     if (!attacker || !target) return
+    if (isAttack && sides === 20 && !attackResolve) {
+      setError('Lancia o scrivi il tiro sul d20 per confrontarlo con la CA.')
+      return
+    }
+    if (isAttack && attackResolve && !attackResolve.hit) {
+      setError('')
+    }
     setBusy(true)
     setError('')
     try {
@@ -84,14 +133,22 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
         target_name: target.name,
         ability: abilityLabel,
         verb: verbLabel,
-        roll_total: result?.total ?? (manual.trim() ? Number(manual) || 0 : 0),
+        roll_total: attackResolve ? attackResolve.total : (result?.total ?? (Number(manual) || 0)),
         roll_text: rollText,
         rolls: result?.rolls || [],
         sides,
         count,
+        hit: attackResolve?.hit ?? null,
+        target_ac: target.ac,
+        damage: canApplyDamage ? damageAmount : 0,
       })
+      if (canApplyDamage && onPatchEnemy) {
+        await onPatchEnemy(applyDamageToEnemy(target, damageAmount), target.id)
+      }
       setResult(null)
       setManual('')
+      setDmgResult(null)
+      setDmgManual('')
     } catch (err) {
       setError(err.message || 'Qualcosa è andato storto.')
     } finally {
@@ -99,11 +156,15 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
     }
   }
 
+  const canRegister = attacker && target && rollText && (!isAttack || sides !== 20 || attackResolve)
+
   return (
     <div className="space-y-4">
       <div>
         <p className="eyebrow">Azioni</p>
-        <p className="mt-1 text-sm text-muted-foreground">Solo tu le vedi. Scegli giocatore e nemico, tira i dadi e registra la frase.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Scegli giocatore e nemico: sul d20 confrontiamo la CA e, se colpisce, togliamo i PF al nemico.
+        </p>
       </div>
 
       <div className="rounded-xl border border-border p-4 space-y-4">
@@ -112,14 +173,21 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
             <span className="eyebrow">Giocatore</span>
             <select value={attackerId} onChange={(e) => setAttackerId(e.target.value)} className="scriba-input mt-2 h-11">
               <option value="">Scegli…</option>
-              {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {players.map((p) => (
+                <option key={p.id} value={p.id}>{p.definition.name || p.player_name}</option>
+              ))}
             </select>
+            {attackerChar && isAttack && (
+              <p className="mt-1 text-xs text-muted-foreground">Bonus attacco: {bonus >= 0 ? `+${bonus}` : bonus}</p>
+            )}
           </label>
           <label>
             <span className="eyebrow">Nemico</span>
             <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="scriba-input mt-2 h-11">
               <option value="">Scegli…</option>
-              {enemies.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+              {enemies.map((e) => (
+                <option key={e.id} value={e.id}>{e.name} · CA {e.ac} · {e.hp}/{e.hpMax} PF</option>
+              ))}
             </select>
           </label>
         </div>
@@ -157,7 +225,7 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
         </div>
 
         <div className="space-y-3">
-          <p className="eyebrow">Dadi</p>
+          <p className="eyebrow">{isAttack ? 'Tiro per colpire' : 'Dadi'}</p>
           <div className="flex flex-wrap gap-2">
             {[4, 6, 8, 10, 12, 20].map((die) => (
               <button
@@ -170,6 +238,9 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
               </button>
             ))}
           </div>
+          {isAttack && sides !== 20 && (
+            <p className="text-xs text-amber-200/80">Per la CA usa il d20.</p>
+          )}
           {sides === 20 && (
             <div className="grid grid-cols-3 gap-2">
               {[['normal', 'Normale'], ['advantage', 'Vantaggio'], ['disadvantage', 'Svantaggio']].map(([key, label]) => (
@@ -201,7 +272,7 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
               <Dice5 className="w-4 h-4" /> Lancia
             </button>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              o scrivi
+              o d20
               <input
                 value={manual}
                 onChange={(e) => { setManual(e.target.value.slice(0, 20)); setResult(null) }}
@@ -213,7 +284,63 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
           {result && !manual && (
             <p className="font-mono text-2xl tabular-nums">{formatRoll(result)}</p>
           )}
+          {attackResolve && (
+            <p className={`text-sm ${attackResolve.hit ? 'text-emerald-300/90' : 'text-rose-300/90'}`}>
+              {formatVsAc(attackResolve)}
+            </p>
+          )}
         </div>
+
+        {isAttack && attackResolve?.hit && (
+          <div className="space-y-3 border-t border-border pt-4">
+            <p className="eyebrow">Danno</p>
+            <div className="flex flex-wrap gap-2">
+              {[4, 6, 8, 10, 12].map((die) => (
+                <button
+                  key={die}
+                  type="button"
+                  onClick={() => setDmgSides(die)}
+                  className={`h-10 min-w-12 px-3 rounded-full border font-mono text-sm transition ${dmgSides === die ? 'border-primary bg-primary/15' : 'border-border text-muted-foreground'}`}
+                >
+                  d{die}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Quanti
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={dmgCount}
+                  onChange={(e) => setDmgCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                  className="scriba-input h-10 w-16 text-center"
+                />
+              </label>
+              <button type="button" onClick={rollDamage} className="btn-ghost h-10 px-4 text-sm">
+                <Dice5 className="w-4 h-4" /> Lancia danno
+              </button>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                o scrivi
+                <input
+                  value={dmgManual}
+                  onChange={(e) => { setDmgManual(e.target.value.slice(0, 20)); setDmgResult(null) }}
+                  placeholder="8"
+                  className="scriba-input h-10 w-20 text-center font-mono"
+                />
+              </label>
+            </div>
+            {dmgResult && !dmgManual && (
+              <p className="font-mono text-xl tabular-nums">{formatRoll({ ...dmgResult, mode: 'normal' })}</p>
+            )}
+            {canApplyDamage && (
+              <p className="text-xs text-muted-foreground">
+                {target.name}: {target.hp} → {hpAfter} PF
+              </p>
+            )}
+          </div>
+        )}
 
         {preview && (
           <p className="rounded-xl bg-muted/40 border border-border px-4 py-3 text-sm leading-relaxed">{preview}</p>
@@ -221,7 +348,7 @@ export default function CombatLogPanel({ characters, enemies, entries, onAdd, on
 
         <button
           type="button"
-          disabled={busy || !attacker || !target || !rollText}
+          disabled={busy || !canRegister}
           onClick={() => void save()}
           className="btn-primary h-11 px-4 text-sm"
         >

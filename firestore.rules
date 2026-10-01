@@ -158,7 +158,7 @@ service cloud.firestore {
       match /combat_log/{id} {
         allow read, delete: if isMaster(code);
         allow create: if isMaster(code)
-          && request.resource.data.keys().hasOnly(['id', 'table_code', 'text', 'attacker_id', 'attacker_name', 'target_id', 'target_name', 'ability', 'verb', 'roll_total', 'roll_text', 'rolls', 'sides', 'count', 'created_date'])
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'text', 'attacker_id', 'attacker_name', 'target_id', 'target_name', 'ability', 'verb', 'roll_total', 'roll_text', 'rolls', 'sides', 'count', 'hit', 'target_ac', 'damage', 'created_date'])
           && request.resource.data.id == id
           && request.resource.data.table_code == code
           && request.resource.data.text is string
@@ -175,6 +175,9 @@ service cloud.firestore {
           && request.resource.data.rolls is list
           && request.resource.data.sides is number
           && request.resource.data.count is number
+          && (request.resource.data.hit == null || request.resource.data.hit is bool)
+          && request.resource.data.target_ac is number
+          && request.resource.data.damage is number
           && request.resource.data.created_date is int;
         allow update: if false;
       }
