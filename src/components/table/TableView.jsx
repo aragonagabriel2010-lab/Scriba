@@ -3,10 +3,22 @@ import { Copy, Check, Download, Link2, Bell } from 'lucide-react'
 import MemberRow from './MemberRow'
 import TableNotes from './TableNotes'
 import InitiativeTracker from './InitiativeTracker'
+import EnemiesPanel from './EnemiesPanel'
 import { copyText, downloadTableBackup, tableShareUrl } from '@/lib/export'
 import { askNotifyPermission } from '@/hooks/useRequestNotify'
 
-export default function TableView({ table, characters, requests, isMaster, onOpen, onSaveNotes, onSaveTable }) {
+export default function TableView({
+  table,
+  characters,
+  requests,
+  enemies,
+  isMaster,
+  onOpen,
+  onSaveNotes,
+  onSaveTable,
+  onSaveEnemy,
+  onDeleteEnemy,
+}) {
   const pendingIds = new Set(requests.filter((r) => r.status === 'pending').map((r) => r.character_id))
   const [copied, setCopied] = useState('')
   const [notifyMsg, setNotifyMsg] = useState('')
@@ -40,7 +52,7 @@ export default function TableView({ table, characters, requests, isMaster, onOpe
           </button>
           {isMaster && (
             <>
-              <button type="button" onClick={() => downloadTableBackup(table, characters, requests)} className="btn-ghost h-11 px-4 text-sm">
+              <button type="button" onClick={() => downloadTableBackup(table, characters, requests, enemies)} className="btn-ghost h-11 px-4 text-sm">
                 <Download className="w-4 h-4" /> Backup JSON
               </button>
               <button type="button" onClick={() => void enableNotify()} className="btn-ghost h-11 px-4 text-sm">
@@ -58,6 +70,16 @@ export default function TableView({ table, characters, requests, isMaster, onOpe
         isMaster={isMaster}
         onSave={(data) => onSaveTable?.(data)}
       />
+
+      {isMaster && (
+        <EnemiesPanel
+          enemies={enemies || []}
+          table={table}
+          onSave={onSaveEnemy}
+          onDelete={onDeleteEnemy}
+          onSaveTable={onSaveTable}
+        />
+      )}
 
       <ul className="divide-y divide-border border-y border-border">
         <li className="py-4 flex items-center justify-between">

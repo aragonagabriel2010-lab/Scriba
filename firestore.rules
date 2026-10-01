@@ -123,6 +123,38 @@ service cloud.firestore {
         );
       }
 
+      match /enemies/{id} {
+        allow read, delete: if isMaster(code);
+        allow create: if isMaster(code)
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'name', 'hp', 'hpMax', 'ac', 'init', 'notes', 'created_date'])
+          && request.resource.data.id == id
+          && request.resource.data.table_code == code
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 40
+          && request.resource.data.hp is number
+          && request.resource.data.hpMax is number
+          && request.resource.data.ac is number
+          && request.resource.data.init is number
+          && request.resource.data.notes is string
+          && request.resource.data.notes.size() <= 800
+          && request.resource.data.created_date is int;
+        allow update: if isMaster(code)
+          && request.resource.data.id == resource.data.id
+          && request.resource.data.table_code == resource.data.table_code
+          && request.resource.data.created_date == resource.data.created_date
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'name', 'hp', 'hpMax', 'ac', 'init', 'notes', 'created_date'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 40
+          && request.resource.data.hp is number
+          && request.resource.data.hpMax is number
+          && request.resource.data.ac is number
+          && request.resource.data.init is number
+          && request.resource.data.notes is string
+          && request.resource.data.notes.size() <= 800;
+      }
+
       match /requests/{id} {
         allow read: if isMaster(code) || resource.data.player_uid == request.auth.uid;
         allow create: if signedIn()

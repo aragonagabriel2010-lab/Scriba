@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import { GripVertical, Plus, SkipForward, RotateCcw } from 'lucide-react'
+import { GripVertical, Plus, SkipForward, RotateCcw, X } from 'lucide-react'
 
 export default function InitiativeTracker({ table, characters, isMaster, onSave }) {
   const [npcName, setNpcName] = useState('')
@@ -129,7 +129,15 @@ export default function InitiativeTracker({ table, characters, isMaster, onSave 
                         <span className="tabular-nums text-muted-foreground">{entry.score}</span>
                       )}
                       {isMaster && (
-                        <button type="button" onClick={() => remove(entry.id)} className="text-xs text-muted-foreground hover:text-foreground">Togli</button>
+                        <button
+                          type="button"
+                          onClick={() => remove(entry.id)}
+                          className="h-10 w-10 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition"
+                          aria-label={`Rimuovi ${entry.name}`}
+                          title="Rimuovi dall’iniziativa"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       )}
                     </li>
                   )}

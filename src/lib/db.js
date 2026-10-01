@@ -1,9 +1,11 @@
 import {
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
   runTransaction,
+  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore'
@@ -65,6 +67,10 @@ function characterRef(code, id) {
 
 function requestRef(code, id) {
   return doc(db, 'tables', code, 'requests', id)
+}
+
+function enemyRef(code, id) {
+  return doc(db, 'tables', code, 'enemies', id)
 }
 
 function clean(data) {
@@ -263,6 +269,83 @@ async function updateTableNow(id, data) {
   if (!Object.keys(payload).length) return
   try {
     await updateDoc(tableRef(session.code), payload)
+  } catch (err) {
+    fail(err)
+  }
+}
+
+export function watchEnemies(code, token, onEnemies) {
+  let stop = () => {}
+  let cancelled = false
+  ensureUser().then((user) => {
+    if (cancelled) return
+    const session = getSession()
+    if (!code || user.uid !== token || session?.role !== 'master') {
+      onEnemies([])
+      return
+    }
+    stop = onSnapshot(collection(db, 'tables', code, 'enemies'), (snap) => {
+      onEnemies(snap.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => (a.created_date || 0) - (b.created_date || 0)))
+    }, () => onEnemies([]))
+  }).catch(() => {
+    if (!cancelled) onEnemies([])
+  })
+  return () => {
+    cancelled = true
+    stop()
+  }
+}
+
+function sanitizeEnemy(data = {}) {
+  const hpMax = Math.max(1, Math.min(9999, Number(data.hpMax) || 1))
+  const hp = Math.max(0, Math.min(hpMax, Number(data.hp ?? hpMax) || 0))
+  return {
+    name: String(data.name || '').trim().slice(0, 40),
+    hp,
+    hpMax,
+    ac: Math.max(0, Math.min(40, Number(data.ac) || 10)),
+    init: Math.max(-20, Math.min(40, Number(data.init) || 0)),
+    notes: String(data.notes || '').trim().slice(0, 800),
+  }
+}
+
+export function saveEnemy(data, id) {
+  return withTimeout(saveEnemyNow(data, id))
+}
+
+async function saveEnemyNow(data, id) {
+  const session = getSession()
+  if (!session?.code || session.role !== 'master') throw italian('Solo il master gestisce i nemici.')
+  const fields = sanitizeEnemy(data)
+  if (!fields.name) throw italian('Scrivi il nome del nemico.')
+  const ref = id ? enemyRef(session.code, id) : doc(collection(db, 'tables', session.code, 'enemies'))
+  const payload = {
+    ...fields,
+    id: ref.id,
+    table_code: session.code,
+  }
+  try {
+    if (id) {
+      await updateDoc(ref, payload)
+    } else {
+      await setDoc(ref, { ...payload, created_date: Date.now() })
+    }
+    return { id: ref.id }
+  } catch (err) {
+    fail(err)
+  }
+}
+
+export function deleteEnemy(id) {
+  return withTimeout(deleteEnemyNow(id))
+}
+
+async function deleteEnemyNow(id) {
+  const session = getSession()
+  if (!session?.code || session.role !== 'master') throw italian('Solo il master gestisce i nemici.')
+  if (!id) throw italian('Nemico non trovato.')
+  try {
+    await deleteDoc(enemyRef(session.code, id))
   } catch (err) {
     fail(err)
   }

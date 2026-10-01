@@ -34,13 +34,14 @@ export async function exportSheetPdf(node, filename = 'scheda-scriba.pdf') {
   pdf.save(filename)
 }
 
-export function downloadTableBackup(table, characters, requests) {
+export function downloadTableBackup(table, characters, requests, enemies = []) {
   const payload = {
     exportedAt: new Date().toISOString(),
     app: 'scriba',
     table,
     characters,
     requests,
+    enemies,
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
   const link = document.createElement('a')
