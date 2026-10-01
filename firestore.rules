@@ -155,6 +155,30 @@ service cloud.firestore {
           && request.resource.data.notes.size() <= 800;
       }
 
+      match /combat_log/{id} {
+        allow read, delete: if isMaster(code);
+        allow create: if isMaster(code)
+          && request.resource.data.keys().hasOnly(['id', 'table_code', 'text', 'attacker_id', 'attacker_name', 'target_id', 'target_name', 'ability', 'verb', 'roll_total', 'roll_text', 'rolls', 'sides', 'count', 'created_date'])
+          && request.resource.data.id == id
+          && request.resource.data.table_code == code
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 240
+          && request.resource.data.attacker_id is string
+          && request.resource.data.attacker_name is string
+          && request.resource.data.target_id is string
+          && request.resource.data.target_name is string
+          && request.resource.data.ability is string
+          && request.resource.data.verb is string
+          && request.resource.data.roll_total is number
+          && request.resource.data.roll_text is string
+          && request.resource.data.rolls is list
+          && request.resource.data.sides is number
+          && request.resource.data.count is number
+          && request.resource.data.created_date is int;
+        allow update: if false;
+      }
+
       match /requests/{id} {
         allow read: if isMaster(code) || resource.data.player_uid == request.auth.uid;
         allow create: if signedIn()

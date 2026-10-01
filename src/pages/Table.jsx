@@ -29,7 +29,20 @@ export default function Table() {
   const navigate = useNavigate();
   const session = getSession();
   const code = session?.code;
-  const { table, characters, requests, enemies, patchCharacter, patchTable, patchEnemy, removeEnemy } = useTable(code);
+  const {
+    table,
+    characters,
+    requests,
+    enemies,
+    combatLog,
+    patchCharacter,
+    patchTable,
+    patchEnemy,
+    removeEnemy,
+    addCombatLog,
+    removeCombatLog,
+    wipeCombatLog,
+  } = useTable(code);
   const [tab, setTab] = useState(session?.role === 'master' ? 'tavolo' : 'scheda');
   const [viewId, setViewId] = useState(null);
   useRequestNotify(requests, session?.role === 'master');
@@ -78,12 +91,16 @@ export default function Table() {
                 characters={characters}
                 requests={requests}
                 enemies={enemies}
+                combatLog={combatLog}
                 isMaster={isMaster}
                 onOpen={(id) => setViewId(id)}
                 onSaveNotes={(text) => patchTable(table.id, { notes: text })}
                 onSaveTable={(data) => patchTable(table.id, data)}
                 onSaveEnemy={patchEnemy}
                 onDeleteEnemy={removeEnemy}
+                onAddCombatLog={addCombatLog}
+                onDeleteCombatLog={removeCombatLog}
+                onClearCombatLog={wipeCombatLog}
               />
             ) : tab === 'richieste' && isMaster ? (
               <RequestsView requests={requests} characters={characters} patch={patchCharacter} />

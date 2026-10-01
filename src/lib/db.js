@@ -2,6 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   query,
   runTransaction,
@@ -71,6 +72,10 @@ function requestRef(code, id) {
 
 function enemyRef(code, id) {
   return doc(db, 'tables', code, 'enemies', id)
+}
+
+function combatLogRef(code, id) {
+  return doc(db, 'tables', code, 'combat_log', id)
 }
 
 function clean(data) {
@@ -346,6 +351,98 @@ async function deleteEnemyNow(id) {
   if (!id) throw italian('Nemico non trovato.')
   try {
     await deleteDoc(enemyRef(session.code, id))
+  } catch (err) {
+    fail(err)
+  }
+}
+
+export function watchCombatLog(code, token, onEntries) {
+  let stop = () => {}
+  let cancelled = false
+  ensureUser().then((user) => {
+    if (cancelled) return
+    const session = getSession()
+    if (!code || user.uid !== token || session?.role !== 'master') {
+      onEntries([])
+      return
+    }
+    stop = onSnapshot(collection(db, 'tables', code, 'combat_log'), (snap) => {
+      onEntries(
+        snap.docs
+          .map((item) => ({ id: item.id, ...item.data() }))
+          .sort((a, b) => (b.created_date || 0) - (a.created_date || 0))
+          .slice(0, 40),
+      )
+    }, () => onEntries([]))
+  }).catch(() => {
+    if (!cancelled) onEntries([])
+  })
+  return () => {
+    cancelled = true
+    stop()
+  }
+}
+
+export function saveCombatLog(data) {
+  return withTimeout(saveCombatLogNow(data))
+}
+
+async function saveCombatLogNow(data) {
+  const session = getSession()
+  if (!session?.code || session.role !== 'master') throw italian('Solo il master registra le azioni.')
+  const text = String(data.text || '').trim().slice(0, 240)
+  if (!text) throw italian('Manca la frase dell’azione.')
+  const ref = doc(collection(db, 'tables', session.code, 'combat_log'))
+  const payload = {
+    id: ref.id,
+    table_code: session.code,
+    text,
+    attacker_id: String(data.attacker_id || '').slice(0, 80),
+    attacker_name: String(data.attacker_name || '').slice(0, 40),
+    target_id: String(data.target_id || '').slice(0, 80),
+    target_name: String(data.target_name || '').slice(0, 40),
+    ability: String(data.ability || '').slice(0, 40),
+    verb: String(data.verb || '').slice(0, 40),
+    roll_total: Number(data.roll_total) || 0,
+    roll_text: String(data.roll_text || '').slice(0, 60),
+    rolls: Array.isArray(data.rolls) ? data.rolls.map((n) => Number(n) || 0).slice(0, 20) : [],
+    sides: Number(data.sides) || 20,
+    count: Number(data.count) || 1,
+    created_date: Date.now(),
+  }
+  try {
+    await setDoc(ref, payload)
+    return { id: ref.id }
+  } catch (err) {
+    fail(err)
+  }
+}
+
+export function deleteCombatLog(id) {
+  return withTimeout(deleteCombatLogNow(id))
+}
+
+async function deleteCombatLogNow(id) {
+  const session = getSession()
+  if (!session?.code || session.role !== 'master') throw italian('Solo il master gestisce le azioni.')
+  if (!id) throw italian('Azione non trovata.')
+  try {
+    await deleteDoc(combatLogRef(session.code, id))
+  } catch (err) {
+    fail(err)
+  }
+}
+
+export function clearCombatLog() {
+  return withTimeout(clearCombatLogNow())
+}
+
+async function clearCombatLogNow() {
+  const session = getSession()
+  if (!session?.code || session.role !== 'master') throw italian('Solo il master gestisce le azioni.')
+  try {
+    const snap = await getDocs(collection(db, 'tables', session.code, 'combat_log'))
+    await Promise.all(snap.docs.map((item) => deleteDoc(item.ref)))
   } catch (err) {
     fail(err)
   }

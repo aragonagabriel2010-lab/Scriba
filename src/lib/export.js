@@ -34,7 +34,7 @@ export async function exportSheetPdf(node, filename = 'scheda-scriba.pdf') {
   pdf.save(filename)
 }
 
-export function downloadTableBackup(table, characters, requests, enemies = []) {
+export function downloadTableBackup(table, characters, requests, enemies = [], combatLog = []) {
   const payload = {
     exportedAt: new Date().toISOString(),
     app: 'scriba',
@@ -42,6 +42,7 @@ export function downloadTableBackup(table, characters, requests, enemies = []) {
     characters,
     requests,
     enemies,
+    combatLog,
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
   const link = document.createElement('a')

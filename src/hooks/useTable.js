@@ -1,12 +1,24 @@
 import { useEffect, useState, useCallback } from 'react'
 import { getSession } from '@/lib/session'
-import { deleteEnemy, saveEnemy, updateCharacter, updateTable, watchEnemies, watchTable } from '@/lib/db'
+import {
+  clearCombatLog,
+  deleteCombatLog,
+  deleteEnemy,
+  saveCombatLog,
+  saveEnemy,
+  updateCharacter,
+  updateTable,
+  watchCombatLog,
+  watchEnemies,
+  watchTable,
+} from '@/lib/db'
 
 export default function useTable(code) {
   const [table, setTable] = useState(undefined)
   const [characters, setCharacters] = useState([])
   const [requests, setRequests] = useState([])
   const [enemies, setEnemies] = useState([])
+  const [combatLog, setCombatLog] = useState([])
 
   useEffect(() => {
     if (!code) return
@@ -24,9 +36,15 @@ export default function useTable(code) {
     const session = getSession()
     if (!session?.token || session.role !== 'master') {
       setEnemies([])
+      setCombatLog([])
       return
     }
-    return watchEnemies(code, session.token, setEnemies)
+    const stopEnemies = watchEnemies(code, session.token, setEnemies)
+    const stopLog = watchCombatLog(code, session.token, setCombatLog)
+    return () => {
+      stopEnemies()
+      stopLog()
+    }
   }, [code])
 
   const patchCharacter = useCallback((id, data) => {
@@ -41,11 +59,16 @@ export default function useTable(code) {
 
   const patchEnemy = useCallback((data, id) => {
     return saveEnemy(data, id).then((result) => {
-      if (!id && result?.id) {
-        setEnemies((list) => [...list, { ...sanitizeLocal(data), id: result.id, created_date: Date.now() }])
-      } else if (id) {
-        setEnemies((list) => list.map((item) => (item.id === id ? { ...item, ...sanitizeLocal(data) } : item)))
-      }
+      const nextId = id || result?.id
+      if (!nextId) return result
+      const local = sanitizeLocal(data)
+      setEnemies((list) => {
+        const exists = list.some((item) => item.id === nextId)
+        if (exists) {
+          return list.map((item) => (item.id === nextId ? { ...item, ...local } : item))
+        }
+        return [...list, { ...local, id: nextId, created_date: Date.now() }]
+      })
       return result
     })
   }, [])
@@ -55,7 +78,41 @@ export default function useTable(code) {
     return deleteEnemy(id)
   }, [])
 
-  return { table, characters, requests, enemies, patchCharacter, patchTable, patchEnemy, removeEnemy }
+  const addCombatLog = useCallback((data) => {
+    return saveCombatLog(data).then((result) => {
+      if (!result?.id) return result
+      setCombatLog((list) => {
+        if (list.some((item) => item.id === result.id)) return list
+        return [{ ...data, id: result.id, created_date: Date.now() }, ...list].slice(0, 40)
+      })
+      return result
+    })
+  }, [])
+
+  const removeCombatLog = useCallback((id) => {
+    setCombatLog((list) => list.filter((item) => item.id !== id))
+    return deleteCombatLog(id)
+  }, [])
+
+  const wipeCombatLog = useCallback(() => {
+    setCombatLog([])
+    return clearCombatLog()
+  }, [])
+
+  return {
+    table,
+    characters,
+    requests,
+    enemies,
+    combatLog,
+    patchCharacter,
+    patchTable,
+    patchEnemy,
+    removeEnemy,
+    addCombatLog,
+    removeCombatLog,
+    wipeCombatLog,
+  }
 }
 
 function sanitizeLocal(data = {}) {

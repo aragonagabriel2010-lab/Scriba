@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Swords, X } from 'lucide-react'
+import { Copy, Plus, Swords, X } from 'lucide-react'
 import Stepper from '@/components/scriba/Stepper'
-import { enemyInitiativeId } from '@/lib/enemies'
+import { enemyInitiativeId, nextEnemyCopyName } from '@/lib/enemies'
 
 const blank = () => ({ name: '', hpMax: 10, hp: 10, ac: 12, init: 10, notes: '' })
 
@@ -94,6 +94,17 @@ export default function EnemiesPanel({ enemies, table, onSave, onDelete, onSaveT
     }
     await onDelete(enemy.id)
     if (editingId === enemy.id) setEditingId(null)
+  })
+
+  const duplicate = (enemy) => run(`copy-${enemy.id}`, async () => {
+    await onSave({
+      name: nextEnemyCopyName(enemy.name, enemies),
+      hp: enemy.hpMax,
+      hpMax: enemy.hpMax,
+      ac: enemy.ac,
+      init: enemy.init,
+      notes: enemy.notes || '',
+    })
   })
 
   return (
@@ -203,6 +214,14 @@ export default function EnemiesPanel({ enemies, table, onSave, onDelete, onSaveT
                       <Swords className="w-3.5 h-3.5" /> In iniziativa
                     </button>
                   )}
+                  <button
+                    type="button"
+                    disabled={busy === `copy-${enemy.id}`}
+                    onClick={() => void duplicate(enemy)}
+                    className="btn-ghost h-10 px-3 text-xs"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> {busy === `copy-${enemy.id}` ? '…' : 'Copia'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setEditingId(open ? null : enemy.id)}

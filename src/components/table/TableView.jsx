@@ -4,6 +4,7 @@ import MemberRow from './MemberRow'
 import TableNotes from './TableNotes'
 import InitiativeTracker from './InitiativeTracker'
 import EnemiesPanel from './EnemiesPanel'
+import CombatLogPanel from './CombatLogPanel'
 import { copyText, downloadTableBackup, tableShareUrl } from '@/lib/export'
 import { askNotifyPermission } from '@/hooks/useRequestNotify'
 
@@ -12,12 +13,16 @@ export default function TableView({
   characters,
   requests,
   enemies,
+  combatLog,
   isMaster,
   onOpen,
   onSaveNotes,
   onSaveTable,
   onSaveEnemy,
   onDeleteEnemy,
+  onAddCombatLog,
+  onDeleteCombatLog,
+  onClearCombatLog,
 }) {
   const pendingIds = new Set(requests.filter((r) => r.status === 'pending').map((r) => r.character_id))
   const [copied, setCopied] = useState('')
@@ -52,7 +57,7 @@ export default function TableView({
           </button>
           {isMaster && (
             <>
-              <button type="button" onClick={() => downloadTableBackup(table, characters, requests, enemies)} className="btn-ghost h-11 px-4 text-sm">
+              <button type="button" onClick={() => downloadTableBackup(table, characters, requests, enemies, combatLog)} className="btn-ghost h-11 px-4 text-sm">
                 <Download className="w-4 h-4" /> Backup JSON
               </button>
               <button type="button" onClick={() => void enableNotify()} className="btn-ghost h-11 px-4 text-sm">
@@ -72,13 +77,23 @@ export default function TableView({
       />
 
       {isMaster && (
-        <EnemiesPanel
-          enemies={enemies || []}
-          table={table}
-          onSave={onSaveEnemy}
-          onDelete={onDeleteEnemy}
-          onSaveTable={onSaveTable}
-        />
+        <>
+          <EnemiesPanel
+            enemies={enemies || []}
+            table={table}
+            onSave={onSaveEnemy}
+            onDelete={onDeleteEnemy}
+            onSaveTable={onSaveTable}
+          />
+          <CombatLogPanel
+            characters={characters}
+            enemies={enemies || []}
+            entries={combatLog || []}
+            onAdd={onAddCombatLog}
+            onDelete={onDeleteCombatLog}
+            onClear={onClearCombatLog}
+          />
+        </>
       )}
 
       <ul className="divide-y divide-border border-y border-border">
