@@ -141,7 +141,7 @@ export default function SheetView({ character, isMaster, pending, requests, patc
         </div>
       )}
       <MagicBlock def={def} state={state} onUpdate={update} />
-      <FeaturesBlock def={def} />
+      <FeaturesBlock def={def} isMaster={isMaster} onUpdate={updateDef} />
       <RestBlock def={def} state={state} isMaster={isMaster} onUpdate={update} onSpend={isMaster ? undefined : (next) => spendHitDie(character, next)} />
       <InventoryBlock state={state} onUpdate={update} />
       <NotesBlock state={state} onUpdate={update} />

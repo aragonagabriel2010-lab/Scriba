@@ -10,7 +10,7 @@ export const formatMeters = (m) => `${String(m).replace('.', ',')} m`;
 export const blankDefinition = (mode, name) => ({
   name: name || '', race: null, classKey: null, subclass: null, path: null, lineage: { high: null, low: null }, level: 1,
   scores: Object.fromEntries(ABILITY_KEYS.map((k) => [k, mode === 'regole' ? 8 : 10])),
-  asi: {}, skills: [], expertise: [], cantrips: [], spells: [], prepared: [], extraSpells: [], features: [], hpMax: 0,
+  asi: {}, skills: [], expertise: [], cantrips: [], spells: [], prepared: [], extraSpells: [], features: [], customFeatures: [], hpMax: 0,
 });
 
 export const defaultState = () => ({
