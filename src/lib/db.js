@@ -33,6 +33,7 @@ function fail(err) {
   if (err?.italian) throw err
   const code = err?.code || ''
   if (code === 'permission-denied' || code.endsWith('permission-denied')) throw new Error('Il tavolo non ha accettato questa operazione.')
+  if (code === 'invalid-argument') throw new Error('I dati della mappa non sono validi per il database. Riprova dopo un aggiornamento.')
   if (code === 'auth/unauthorized-domain') throw new Error('Questo indirizzo non è ancora abilitato su Firebase.')
   if (code === 'auth/operation-not-allowed') throw new Error('L’accesso senza account non è attivo.')
   if (code === 'unavailable' || code === 'auth/network-request-failed') throw new Error('Connessione assente. Riprova.')

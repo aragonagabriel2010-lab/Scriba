@@ -19,7 +19,7 @@ import { getSession } from '@/lib/session'
 
 export default function MapView({ table, characters, isMaster, onSaveMap }) {
   const [map, setMap] = useState(() => normalizeMap(table?.map))
-  const [tool, setTool] = useState('terrain')
+  const [tool, setTool] = useState('hand')
   const [regionType, setRegionType] = useState('pianura')
   const [markerType, setMarkerType] = useState('villaggio')
   const [removeMarkerMode, setRemoveMarkerMode] = useState(false)
@@ -145,8 +145,8 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
         <p className="eyebrow">Mappa del mondo</p>
         <h1 className="font-display text-4xl mt-2">Mappa</h1>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          Griglia a quadretti. Il mare è lo sfondo: disegna isole e coste con <span className="text-foreground">Disegna terreno</span>.
-          Le regioni sono blocchi 8×8. Città e regni occupano più caselle.
+          Mappa infinita a quadretti: zoom e trascina la vista. Il mare è lo sfondo — disegna isole con{' '}
+          <span className="text-foreground">Disegna terreno</span>. Regioni a blocchi 5×5. Città e regni occupano più caselle.
         </p>
       </div>
 
@@ -180,7 +180,7 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
 
               {tool === 'region' && (
                 <div>
-                  <p className="eyebrow mb-2">Tipo regione (8×8)</p>
+                  <p className="eyebrow mb-2">Tipo regione (5×5)</p>
                   <div className="flex flex-wrap gap-2">
                     {REGION_TYPES.map((item) => (
                       <button

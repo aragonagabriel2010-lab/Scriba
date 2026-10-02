@@ -113,7 +113,7 @@ export default function Table() {
         isMaster={isMaster}
         onAdvance={isMaster ? advanceTurn : undefined}
       />
-      <main className="max-w-3xl mx-auto px-5 py-8">
+      <main className={`mx-auto px-5 py-8 ${tab === 'mappa' && !viewId ? 'max-w-6xl' : 'max-w-3xl'}`}>
         <AnimatePresence mode="wait">
           <motion.div key={viewId || tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             {viewing && isMaster ? (
