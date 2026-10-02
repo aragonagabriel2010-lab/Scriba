@@ -13,9 +13,12 @@ import ManualView from '@/components/manual/ManualView';
 import PlayerSheetTab from '@/components/sheet/PlayerSheetTab';
 import MasterSheet from '@/components/sheet/MasterSheet';
 import DiceView from '@/components/sheet/DiceView';
+import MapView from '@/components/map/MapView';
+import { normalizeMap } from '@/lib/map';
 
 const MASTER_TABS = [
   { key: 'tavolo', label: 'Tavolo' },
+  { key: 'mappa', label: 'Mappa' },
   { key: 'richieste', label: 'Richieste' },
   { key: 'dadi', label: 'Dadi' },
   { key: 'manuale', label: 'Manuale' },
@@ -23,6 +26,7 @@ const MASTER_TABS = [
 const PLAYER_TABS = [
   { key: 'scheda', label: 'Scheda' },
   { key: 'tavolo', label: 'Tavolo' },
+  { key: 'mappa', label: 'Mappa' },
   { key: 'dadi', label: 'Dadi' },
   { key: 'manuale', label: 'Manuale' },
 ];
@@ -138,6 +142,13 @@ export default function Table() {
                 onClearCombatLog={wipeCombatLog}
                 onPatchEnemy={patchEnemy}
                 onPatchCharacter={patchCharacter}
+              />
+            ) : tab === 'mappa' ? (
+              <MapView
+                table={table}
+                characters={characters}
+                isMaster={isMaster}
+                onSaveMap={(mapData) => patchTable(table.id, { map: normalizeMap(mapData) })}
               />
             ) : tab === 'richieste' && isMaster ? (
               <RequestsView requests={requests} characters={characters} patch={patchCharacter} />

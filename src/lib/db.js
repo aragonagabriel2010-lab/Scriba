@@ -271,6 +271,7 @@ async function updateTableNow(id, data) {
   if (data.notes != null) payload.notes = String(data.notes)
   if (data.initiative != null) payload.initiative = data.initiative
   if (data.turn_index != null) payload.turn_index = Number(data.turn_index) || 0
+  if (data.map != null) payload.map = data.map
   if (!Object.keys(payload).length) return
   try {
     await updateDoc(tableRef(session.code), payload)
