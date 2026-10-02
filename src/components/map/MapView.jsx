@@ -38,6 +38,15 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
     }
   }, [table?.map, dirty])
 
+  useEffect(() => {
+    if (!ready) return undefined
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [ready])
+
   const persist = useCallback(async (next) => {
     if (!isMaster || !onSaveMap) return
     setSaving(true)
@@ -140,13 +149,12 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="flex flex-col h-full min-h-0 gap-3 overflow-hidden">
+      <div className="shrink-0">
         <p className="eyebrow">Mappa del mondo</p>
-        <h1 className="font-display text-4xl mt-2">Mappa</h1>
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          Mappa infinita a quadretti: zoom e trascina la vista. Il mare è lo sfondo — disegna isole con{' '}
-          <span className="text-foreground">Disegna terreno</span>. Regioni a blocchi 5×5. Città e regni occupano più caselle.
+        <h1 className="font-display text-3xl sm:text-4xl mt-1">Mappa</h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed hidden sm:block">
+          Zoom con la rotella (solo sulla mappa). Regioni 5×5 · mare = tutto ciò che non chiudi con il terreno.
         </p>
       </div>
 
@@ -159,7 +167,7 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
       {ready && (
         <>
           {isMaster && (
-            <div className="space-y-4">
+            <div className="shrink-0 space-y-3 max-h-[38vh] overflow-y-auto overscroll-contain pr-1">
               <div>
                 <p className="eyebrow mb-2">Strumento</p>
                 <div className="flex flex-wrap gap-2">
@@ -313,16 +321,18 @@ export default function MapView({ table, characters, isMaster, onSaveMap }) {
             </div>
           )}
 
-          <MapCanvas
-            map={map}
-            tool={tool}
-            editable={isMaster}
-            characters={players}
-            onPaintCell={onPaintCell}
-            onPointerUp={onPointerUp}
-          />
+          <div className="flex-1 min-h-0 flex flex-col">
+            <MapCanvas
+              map={map}
+              tool={tool}
+              editable={isMaster}
+              characters={players}
+              onPaintCell={onPaintCell}
+              onPointerUp={onPointerUp}
+            />
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
+          <div className="shrink-0 grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs text-muted-foreground">
             {REGION_TYPES.map((r) => (
               <div key={r.key} className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-sm" style={{ background: r.color }} />

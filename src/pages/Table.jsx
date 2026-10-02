@@ -104,8 +104,10 @@ export default function Table() {
     });
   };
 
+  const mapTabActive = tab === 'mappa' && !viewId;
+
   return (
-    <div className="min-h-screen pb-24">
+    <div className={mapTabActive ? 'h-dvh overflow-hidden flex flex-col' : 'min-h-screen pb-24'}>
       <TopBar code={table.code} name={isMaster ? table.master_name : myCharacter?.player_name} isMaster={isMaster} tabs={tabsWithBadge} tab={viewId ? 'tavolo' : tab} setTab={setTabSafe} onLeave={leave} />
       <TurnBanner
         table={table}
@@ -113,9 +115,16 @@ export default function Table() {
         isMaster={isMaster}
         onAdvance={isMaster ? advanceTurn : undefined}
       />
-      <main className={`mx-auto px-5 py-8 ${tab === 'mappa' && !viewId ? 'max-w-6xl' : 'max-w-3xl'}`}>
+      <main className={`mx-auto px-5 w-full ${mapTabActive ? 'flex-1 min-h-0 overflow-hidden py-4 max-w-6xl' : 'py-8 max-w-3xl'}`}>
         <AnimatePresence mode="wait">
-          <motion.div key={viewId || tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          <motion.div
+            key={viewId || tab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className={mapTabActive ? 'h-full min-h-0 flex flex-col overflow-hidden' : undefined}
+          >
             {viewing && isMaster ? (
               <MasterSheet
                 character={viewing}

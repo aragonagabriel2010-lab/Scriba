@@ -262,14 +262,14 @@ export default function MapCanvas({
     onPointerUp?.()
   }
 
-  const handleWheel = (e) => {
-    e.preventDefault()
+  const zoomAt = useCallback((clientX, clientY, deltaY) => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
+    const mx = clientX - rect.left
+    const my = clientY - rect.top
     const { panX, panY, zoom } = viewRef.current
-    const factor = e.deltaY > 0 ? 0.92 : 1.08
+    const factor = deltaY > 0 ? 0.92 : 1.08
     const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor))
     const wx = (mx - panX) / zoom
     const wy = (my - panY) / zoom
@@ -277,15 +277,28 @@ export default function MapCanvas({
     viewRef.current.panX = mx - wx * nextZoom
     viewRef.current.panY = my - wy * nextZoom
     bumpView()
-  }
+  }, [bumpView])
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const onWheel = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      zoomAt(e.clientX, e.clientY, e.deltaY)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [zoomAt])
 
   const cursor = tool === 'hand' ? 'grab' : canPaint ? 'crosshair' : 'grab'
 
   return (
-    <div className="scriba-panel overflow-hidden">
+    <div className="scriba-panel flex flex-col flex-1 min-h-0 overflow-hidden overscroll-none">
       <div
         ref={wrapRef}
-        className="relative w-full h-[min(70vh,640px)] min-h-[320px] bg-[#0e1a22]"
+        className="relative w-full flex-1 min-h-[200px] bg-[#0e1a22] overscroll-none touch-none"
+        style={{ overscrollBehavior: 'none' }}
       >
         <canvas
           ref={canvasRef}
@@ -295,7 +308,6 @@ export default function MapCanvas({
           onPointerMove={handleMove}
           onPointerUp={handleUp}
           onPointerCancel={handleUp}
-          onWheel={handleWheel}
           onContextMenu={(e) => e.preventDefault()}
         />
       </div>
