@@ -184,13 +184,13 @@ export default function MapCanvas({
   }
 
   return (
-    <div className="overflow-auto rounded-2xl border border-border/80 bg-[#0e1a22]">
+    <div className="w-fit max-w-full overflow-auto rounded-2xl border border-border/80 bg-[#0e1a22]">
       <canvas
         ref={canvasRef}
         width={width}
         height={height}
         className={`block max-w-full h-auto touch-none ${editable ? 'cursor-crosshair' : 'cursor-default'}`}
-        style={{ imageRendering: 'pixelated', width: '100%', maxWidth: width }}
+        style={{ imageRendering: 'pixelated' }}
         onPointerDown={handleDown}
         onPointerMove={handleMove}
         onPointerUp={handleUp}
