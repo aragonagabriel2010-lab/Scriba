@@ -107,15 +107,17 @@ export default function Table() {
   const mapTabActive = tab === 'mappa' && !viewId;
 
   return (
-    <div className={mapTabActive ? 'h-dvh overflow-hidden flex flex-col' : 'min-h-screen pb-24'}>
-      <TopBar code={table.code} name={isMaster ? table.master_name : myCharacter?.player_name} isMaster={isMaster} tabs={tabsWithBadge} tab={viewId ? 'tavolo' : tab} setTab={setTabSafe} onLeave={leave} />
-      <TurnBanner
-        table={table}
-        characters={isMaster ? characters : (myCharacter ? [myCharacter] : [])}
-        isMaster={isMaster}
-        onAdvance={isMaster ? advanceTurn : undefined}
-      />
-      <main className={`mx-auto px-5 w-full ${mapTabActive ? 'flex-1 min-h-0 overflow-hidden py-4 max-w-6xl' : 'py-8 max-w-3xl'}`}>
+    <div className={mapTabActive ? 'h-dvh max-h-dvh overflow-hidden flex flex-col' : 'min-h-screen pb-24'}>
+      <div className={mapTabActive ? 'shrink-0' : undefined}>
+        <TopBar code={table.code} name={isMaster ? table.master_name : myCharacter?.player_name} isMaster={isMaster} tabs={tabsWithBadge} tab={viewId ? 'tavolo' : tab} setTab={setTabSafe} onLeave={leave} />
+        <TurnBanner
+          table={table}
+          characters={isMaster ? characters : (myCharacter ? [myCharacter] : [])}
+          isMaster={isMaster}
+          onAdvance={isMaster ? advanceTurn : undefined}
+        />
+      </div>
+      <main className={`mx-auto w-full ${mapTabActive ? 'flex-1 min-h-0 overflow-hidden flex flex-col max-w-none px-0 py-0' : 'px-3 sm:px-5 py-8 max-w-3xl'}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={viewId || tab}
@@ -123,7 +125,7 @@ export default function Table() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={mapTabActive ? 'h-full min-h-0 flex flex-col overflow-hidden' : undefined}
+            className={mapTabActive ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : undefined}
           >
             {viewing && isMaster ? (
               <MasterSheet

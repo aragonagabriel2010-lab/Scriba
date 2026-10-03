@@ -24,6 +24,7 @@ export default function MapCanvas({
   characters,
   onPaintCell,
   onPointerUp,
+  compact = false,
 }) {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
@@ -40,16 +41,19 @@ export default function MapCanvas({
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
-    const ro = new ResizeObserver(() => {
-      setSize({ w: el.clientWidth || 640, h: el.clientHeight || 480 })
-    })
+    const measure = () => {
+      const w = Math.max(1, Math.floor(el.clientWidth))
+      const h = Math.max(1, Math.floor(el.clientHeight))
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }))
+    }
+    const ro = new ResizeObserver(measure)
     ro.observe(el)
-    setSize({ w: el.clientWidth || 640, h: el.clientHeight || 480 })
+    measure()
     return () => ro.disconnect()
   }, [])
 
   useEffect(() => {
-    if (centered.current) return
+    if (centered.current || size.w < 2 || size.h < 2) return
     const b = mapContentBounds(map)
     const cx = ((b.minX + b.maxX) / 2) * CELL_PX
     const cy = ((b.minY + b.maxY) / 2) * CELL_PX
@@ -61,12 +65,10 @@ export default function MapCanvas({
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
-    const dpr = window.devicePixelRatio || 1
+    if (!canvas || size.w < 2 || size.h < 2) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
     canvas.width = Math.floor(size.w * dpr)
     canvas.height = Math.floor(size.h * dpr)
-    canvas.style.width = `${size.w}px`
-    canvas.style.height = `${size.h}px`
 
     const ctx = canvas.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -294,15 +296,15 @@ export default function MapCanvas({
   const cursor = tool === 'hand' ? 'grab' : canPaint ? 'crosshair' : 'grab'
 
   return (
-    <div className="scriba-panel flex flex-col flex-1 min-h-0 overflow-hidden overscroll-none">
+    <div className={`scriba-panel flex flex-col flex-1 min-h-0 h-full overflow-hidden overscroll-none ${compact ? 'rounded-none border-0 shadow-none' : ''}`}>
       <div
         ref={wrapRef}
-        className="relative w-full flex-1 min-h-[200px] bg-[#0e1a22] overscroll-none touch-none"
+        className="relative w-full flex-1 min-h-0 bg-[#0e1a22] overscroll-none touch-none"
         style={{ overscrollBehavior: 'none' }}
       >
         <canvas
           ref={canvasRef}
-          className="block w-full h-full touch-none"
+          className="absolute inset-0 block w-full h-full touch-none"
           style={{ imageRendering: 'pixelated', cursor: panning.current ? 'grabbing' : cursor }}
           onPointerDown={handleDown}
           onPointerMove={handleMove}
@@ -311,11 +313,13 @@ export default function MapCanvas({
           onContextMenu={(e) => e.preventDefault()}
         />
       </div>
-      <p className="px-4 py-2.5 text-xs text-muted-foreground border-t border-border/50">
-        {editable
-          ? 'Rotella: zoom · Alt+trascina o «Muovi mappa»: sposta · Il mare è tutto ciò che non chiudi con il terreno.'
-          : 'Solo il master disegna. Qui vedi isole, luoghi e dove siete.'}
-      </p>
+      {!compact && (
+        <p className="shrink-0 px-3 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs text-muted-foreground border-t border-border/50">
+          {editable
+            ? 'Pinch/rotella: zoom · «Muovi mappa» o due dita: sposta.'
+            : 'Solo il master disegna. Qui vedi isole, luoghi e dove siete.'}
+        </p>
+      )}
     </div>
   )
 }
